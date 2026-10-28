@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Min Finder Simulator — Bản Offline (Dark, nút màu)</title>
+  <meta name="description" content="Mô phỏng trực quan thuật toán tìm giá trị nhỏ nhất (MIN) trong mảng. Có so sánh từng bước, highlight phần tử Min hiện tại. Bản offline, không CDN."/>
+  <style>
+    .home-btn{
+      position:fixed; top:16px; right:16px; z-index:9999;
+      display:inline-grid; place-items:center;
+      width:44px; height:44px; border-radius:12px;
+      background:#0b1220; color:#e5e7eb;
+      border:1px solid #334155; text-decoration:none;
+      box-shadow:0 10px 30px rgba(0,0,0,.35);
+      transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+    }
+    .home-btn:hover{
+      transform:translateY(-1px);
+      box-shadow:0 14px 36px rgba(0,0,0,.45);
+      border-color:#475569;
+    }
+    .home-btn svg{
+      width:22px; height:22px;
+      stroke:currentColor; fill:none;
+      stroke-width:2; stroke-linecap:round; stroke-linejoin:round;
+    }
+
+    :root {
+      --bg1: #0b1220;
+      --bg2: #0a0f1a;
+      --card: #0e1626;
+      --panel: #0c1322;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --border: #1e293b;
+      --shadow: 0 1px 2px rgba(0,0,0,.35), 0 10px 30px rgba(2,6,23,.4);
+
+      --green-600:#059669; --green-700:#047857;
+      --sky-600:#0284c7;
+      --amber:#f59e0b;
+      --rose:#e11d48;
+
+      --emerald-25: rgba(16,185,129,.18); /* current MIN */
+      --sky-25: rgba(2,132,199,.18);      /* đang so sánh */
+      --gray-checked-bg:#0f172a;
+      --gray-checked-fg:#9ca3af;
+      --gray-checked-border:#334155;
+    }
+
+    html,body{
+      margin:0;padding:0;
+      background:linear-gradient(135deg,var(--bg1),var(--bg2));
+      color:var(--text);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;
+    }
+
+    .container{max-width:1180px;margin:0 auto;padding:24px;}
+    .header{text-align:center;margin-bottom:24px}
+
+    .chip{
+      display:inline-flex;align-items:center;gap:10px;
+      background:var(--card);border:1px solid var(--border);
+      border-radius:16px;padding:10px 16px;box-shadow:var(--shadow)
+    }
+    .title{font-weight:900;font-size:26px;letter-spacing:.3px}
+    .subtitle{color:var(--muted);margin-top:8px}
+
+    .grid{display:grid;grid-template-columns:1fr;gap:16px}
+    @media(min-width:1024px){.grid{grid-template-columns:5fr 7fr}}
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:16px;
+      box-shadow:var(--shadow)
+    }
+    .card-h{
+      display:flex;justify-content:space-between;align-items:center;
+      padding:12px 16px;border-bottom:1px solid var(--border);font-weight:800
+    }
+    .card-b{padding:16px}
+    .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+    .badge{
+      display:inline-block;border:1px solid var(--border);
+      padding:3px 10px;border-radius:10px;
+      font-size:12px;background:#0b1220;color:#cbd5e1
+    }
+    .text-muted{color:#9ca3af}
+
+    .btn{
+      border:0;border-radius:12px;
+      padding:9px 13px;font-size:14px;
+      cursor:pointer;box-shadow:var(--shadow);font-weight:700
+    }
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+    .btn.green{background:var(--green-600);color:#fff}
+    .btn.green:hover{background:var(--green-700)}
+    .btn.blue{background:var(--sky-600);color:#fff}
+    .btn.blue:hover{filter:brightness(1.08)}
+    .btn.amber{background:var(--amber);color:#1f2937}
+    .btn.amber:hover{filter:brightness(1.08)}
+    .btn.rose{background:var(--rose);color:#fff}
+    .btn.rose:hover{filter:brightness(1.08)}
+    .btn.ghost{
+      background:transparent;border:1px solid var(--border);color:#cbd5e1
+    }
+    .btn.ghost:hover{background:#0b1220}
+
+    .slider{width:220px}
+    .input{
+      border:1px solid var(--border);border-radius:12px;
+      padding:8px 10px;background:#0b1220;color:#e5e7eb;
+      font-family:ui-monospace,Consolas,monospace;
+      font-size:14px;
+    }
+
+    .algo-select{
+      border:1px solid var(--border);border-radius:12px;
+      padding:8px 12px;
+      background:#0b1220;color:#e5e7eb;
+      font-size:14px;
+      box-shadow:var(--shadow);
+      font-weight:600;
+    }
+
+    .grid8{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:12px
+    }
+    @media(min-width:720px){
+      .grid8{grid-template-columns:repeat(8,1fr)}
+    }
+
+    .cell{
+      position:relative;
+      min-height:64px;
+      border-radius:14px;
+      border:1px solid var(--border);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:800;
+      font-size:20px;
+      box-shadow:var(--shadow);
+      background:#0b1220;
+      color:#e5e7eb;
+      transition:.18s;
+    }
+
+    /* MIN hiện tại */
+    .cell.minNow{
+      background:var(--emerald-25);
+      color:#34d399;
+      border-color:#10b981;
+    }
+    /* phần tử đang so sánh với minNow */
+    .cell.checking{
+      background:var(--sky-25);
+      color:#7dd3fc;
+      border-color:#38bdf8;
+    }
+    /* phần tử đã duyệt qua rồi */
+    .cell.checked{
+      background:var(--gray-checked-bg);
+      color:var(--gray-checked-fg);
+      border-color:var(--gray-checked-border);
+    }
+
+    .idx{
+      position:absolute;
+      right:-8px;top:-8px;
+      background:#111827;
+      color:#fff;
+      border-radius:999px;
+      padding:2px 8px;
+      font-size:11px;
+      font-weight:900
+    }
+
+    .explain{
+      background:var(--panel);
+      border-radius:14px;
+      padding:12px;
+      box-shadow:var(--shadow);
+      margin-top:12px;
+      color:#e5e7eb;
+      font-size:14px;
+      line-height:1.4;
+      white-space:pre-line;
+    }
+
+    ol.code{
+      background:var(--panel);
+      border-radius:14px;
+      padding:12px;
+      list-style:none;
+      margin:0;
+    }
+    ol.code li{
+      padding:8px 10px;
+      border-radius:10px;
+      font-family:ui-monospace,Consolas,monospace;
+      font-size:13px;
+      line-height:1.4;
+    }
+    ol.code li.active{
+      background:rgba(250,204,21,.25);
+      box-shadow:0 0 0 2px rgba(250,204,21,.6) inset
+    }
+
+    footer{
+      margin-top:20px;
+      text-align:center;
+      font-size:12px;
+      color:#93a5bf
+    }
+  </style>
+</head>
+<body>
+<a href="index.html" class="home-btn" aria-label="Về trang chủ" title="Về trang chủ">
+  <svg viewBox="0 0 24 24">
+    <path d="M3 10l9-7 9 7"/>
+    <path d="M5 10v10a2 2 0 0 0 2 2h3v-6h4v6h3a2 2 0 0 0 2-2V10"/>
+  </svg>
+</a>
+
+<div class="container">
+  <header class="header">
+    <div class="chip">
+      <span>❄️</span>
+      <div class="title">Min Finder Simulator — <span style="color:#60a5fa">Tìm Giá Trị Nhỏ Nhất (MIN)</span></div>
+    </div>
+    <div class="subtitle">
+      Giao diện dark + nút màu. Bản offline, chạy ngay trong trình duyệt.<br/>
+      Thuật toán: tìm MIN bằng duyệt tuyến tính, chia để trị, và "giải đấu".
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- LEFT CONTROL PANEL -->
+    <div class="left-col">
+      <div class="card">
+        <div class="card-h">Thiết lập mảng & thuật toán</div>
+        <div class="card-b">
+
+          <div class="row">
+            <span class="badge">Kích thước (n)</span>
+            <input id="n" type="range" min="3" max="15" step="1" class="slider"/>
+            <span id="nLabel" class="badge">8</span>
+          </div>
+
+          <div class="row" style="margin-top:8px">
+            <button class="btn ghost" id="btnMakeDistinct">Tạo mảng (không trùng)</button>
+            <button class="btn ghost" id="btnMakeMaybeDup">Tạo mảng (có thể trùng)</button>
+          </div>
+
+          <div class="row" style="margin-top:8px">
+            <span class="badge">Hoặc nhập thủ công</span>
+            <input id="manualArr" class="input" placeholder="VD: 5, -2, 1, -2, 3"/>
+            <button class="btn ghost" id="btnUseManual">Dùng mảng này</button>
+          </div>
+
+          <div class="row" style="margin-top:8px">
+            <span class="badge">Thuật toán</span>
+            <select id="algo" class="algo-select">
+              <option value="linear">Duyệt tuyến tính (Linear Scan)</option>
+              <option value="divide">Chia để trị (Divide & Conquer)</option>
+              <option value="tournament">Giải đấu (Tournament)</option>
+            </select>
+          </div>
+
+          <div class="row" style="margin-top:8px">
+            <span class="badge">Tốc độ</span>
+            <input id="speed" type="range" min="0.5" max="4.0" step="0.1" class="slider"/>
+            <span id="speedLabel" class="badge">1.6s/bước</span>
+          </div>
+
+          <div class="row" style="margin-top:8px">
+            <button class="btn green" id="btnRun">Bắt đầu</button>
+            <button class="btn blue" id="btnStep">Bước tiếp ▷</button>
+            <button class="btn amber" id="btnAuto">Tự động ▷</button>
+            <button class="btn rose" id="btnReset">Làm mới</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="card-h">Ghi chú / Kết quả</div>
+        <div class="card-b">
+          <div class="text-muted" style="font-size:13px;line-height:1.4">
+            - MIN hiện thời là giá trị nhỏ nhất đã gặp từ đầu đến vị trí đang xét.<br/>
+            - Số phép so sánh tăng lên mỗi lần thuật toán so sánh hai giá trị.<br/>
+            - Với "Chia để trị" và "Tournament", mô phỏng sẽ ghi log các "trận" tìm MIN.
+          </div>
+
+          <div class="row" style="margin-top:12px">
+            <button class="btn ghost" id="btnExport">Xuất log .txt</button>
+          </div>
+
+          <div id="quizArea" style="margin-top:12px">
+            <div class="text-muted" style="font-size:13px;line-height:1.4">
+              Ước tính: thuật toán cần bao nhiêu phép so sánh tất cả?
+            </div>
+            <div class="row" style="margin-top:8px">
+              <input id="quiz" class="input" placeholder="Nhập số nguyên" style="width:120px"/>
+              <button class="btn ghost" id="btnQuiz">Kiểm tra</button>
+              <span class="badge" id="expected"></span>
+            </div>
+            <div id="quizResult" class="explain" style="display:none;margin-top:8px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT VISUAL PANEL -->
+    <div class="right-col">
+      <div class="card">
+        <div class="card-h">Bảng mô phỏng</div>
+        <div class="card-b">
+          <div class="row" style="margin-bottom:8px">
+            <span class="badge">i = <span id="badgeI">0</span></span>
+            <span class="badge">MIN = <span id="badgeMinVal">?</span></span>
+            <span class="badge">chỉ số MIN = <span id="badgeMinIdx">?</span></span>
+            <span class="badge">so sánh = <span id="badgeC">0</span></span>
+            <span class="badge" id="badgeAlgo">Linear Scan</span>
+          </div>
+
+          <div id="grid" class="grid8"></div>
+          <div id="explain" class="explain"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="card-h">Mã giả thuật toán</div>
+        <div class="card-b">
+          <ol id="code" class="code"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>© <span id="y"></span> — Mô phỏng giáo dục, bản offline. Giao diện dark + nút màu.</footer>
+</div>
+
+<script>
+/*
+  ============================
+  MÔ PHỎNG TÌM GIÁ TRỊ NHỎ NHẤT (MIN)
+  ============================
+
+  Ba chế độ:
+  1. Linear (Duyệt tuyến tính)
+     minVal ← A[0]
+     for i = 1..n-1:
+        so sánh A[i] với minVal
+        nếu A[i] nhỏ hơn thì cập nhật minVal
+  2. Divide & Conquer (Chia để trị)
+     Gọi đệ quy hai nửa, lấy MIN của trái và phải.
+     Log lại mỗi lần ghép kết quả.
+  3. Tournament (Giải đấu)
+     Ghép cặp các phần tử, ai nhỏ hơn "thắng" đi tiếp.
+     Log từng trận đấu.
+
+  Mục tiêu: hỗ trợ học sinh nhìn thấy cách thuật toán chọn ra MIN.
+*/
+
+const state = {
+  n: 8,
+  arr: [], // [{id,value,state}]
+  i: 0,
+  minIdx: null,
+  minVal: null,
+  comps: 0,
+  autoPlay: false,
+  speed: 1.6,
+  timer: null,
+  explain: "Chọn thuật toán và bấm Bắt đầu.",
+  line: null,
+  algo: "linear",
+
+  // timeline cho divide / tournament
+  timeline: [],
+  stepPtr: 0,
+
+  // log xuất file
+  logLines: []
+};
+
+/* ======== TIỆN ÍCH DOM ======== */
+const $ = (id) => document.getElementById(id);
+function randInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+
+/* Tạo mảng ngẫu nhiên */
+function createArray(n, distinct){
+  const used = new Set();
+  const out = [];
+  for(let k=0;k<n;k++){
+    let v = randInt(-50,99);
+    if(distinct){
+      while(used.has(v)) v = randInt(-50,99);
+      used.add(v);
+    }
+    out.push({id:k,value:v,state:"idle"});
+  }
+  return out;
+}
+
+/* Reset trạng thái chạy từng bước cho LINEAR MIN */
+function resetLinear(){
+  if(state.arr.length===0) return;
+  // reset style
+  state.arr = state.arr.map((o,i)=>({id:i,value:o.value,state:"idle"}));
+  state.i = 0;
+  state.minIdx = 0;
+  state.minVal = state.arr[0].value;
+  state.arr[0].state = "minNow";
+  state.comps = 0;
+  state.stepPtr = 0;
+  state.timeline = [];
+  state.logLines = [];
+  state.explain = `Khởi tạo: MIN = A[0] = ${state.minVal}.`;
+  state.line = 0;
+}
+
+/* Xây timeline cho Divide & Conquer (tìm MIN) */
+function buildDivideTimeline(){
+  const A = state.arr.map(x=>x.value);
+  const steps = [];
+  let comps = 0;
+
+  function rec(l,r){
+    if(l===r){
+      steps.push({
+        type:"base",
+        compare:[l],
+        msg:`Cơ sở: MIN của đoạn [${l},${r}] là A[${l}]=${A[l]}`,
+        minIdx:l, minVal:A[l],
+        compsNow: comps,
+        line:1
+      });
+      return {idx:l,val:A[l]};
+    }
+    const mid = Math.floor((l+r)/2);
+    steps.push({
+      type:"split",
+      compare:[l,r],
+      msg:`Chia đoạn [${l},${r}] thành [${l},${mid}] và [${mid+1},${r}]`,
+      minIdx:null,minVal:null,
+      compsNow: comps,
+      line:2
+    });
+
+    const L = rec(l,mid);
+    const R = rec(mid+1,r);
+
+    comps++;
+    steps.push({
+      type:"compare-merge",
+      compare:[L.idx,R.idx],
+      msg:`So sánh MIN trái ${L.val} (idx ${L.idx}) và MIN phải ${R.val} (idx ${R.idx})`,
+      minIdx:L.idx,minVal:L.val,
+      compsNow: comps,
+      line:3
+    });
+
+    if(R.val < L.val){
+      steps.push({
+        type:"choose-right",
+        compare:[R.idx],
+        msg:`Chọn MIN = ${R.val} tại vị trí ${R.idx}`,
+        minIdx:R.idx,minVal:R.val,
+        compsNow: comps,
+        line:4
+      });
+      return {idx:R.idx,val:R.val};
+    } else {
+      steps.push({
+        type:"choose-left",
+        compare:[L.idx],
+        msg:`Giữ MIN = ${L.val} tại vị trí ${L.idx}`,
+        minIdx:L.idx,minVal:L.val,
+        compsNow: comps,
+        line:4
+      });
+      return {idx:L.idx,val:L.val};
+    }
+  }
+
+  if(A.length>0){
+    const ans = rec(0,A.length-1);
+    steps.push({
+      type:"final",
+      compare:[ans.idx],
+      msg:`Kết quả cuối: MIN = ${ans.val} tại chỉ số ${ans.idx}`,
+      minIdx:ans.idx,minVal:ans.val,
+      compsNow: comps,
+      line:5
+    });
+  }
+  return steps;
+}
+
+/* Xây timeline cho Tournament (tìm MIN) */
+function buildTournamentTimeline(){
+  const basePlayers = state.arr.map((o)=>({idx:o.id,val:o.value}));
+  const steps = [];
+  let comps = 0;
+
+  let roundPlayers = basePlayers.slice();
+  let roundNum = 1;
+
+  while(roundPlayers.length>1){
+    const nextRound=[];
+    for(let i=0;i<roundPlayers.length;i+=2){
+      if(i+1 < roundPlayers.length){
+        const p1=roundPlayers[i];
+        const p2=roundPlayers[i+1];
+
+        comps++;
+        steps.push({
+          type:"match",
+          compare:[p1.idx,p2.idx],
+          msg:`Vòng ${roundNum}: so sánh ${p1.val} (idx ${p1.idx}) với ${p2.val} (idx ${p2.idx})`,
+          minIdx:p1.idx,
+          minVal:p1.val,
+          compsNow:comps,
+          line:3
+        });
+
+        if(p2.val < p1.val){
+          steps.push({
+            type:"winner",
+            compare:[p2.idx],
+            msg:`Người thắng (nhỏ hơn): ${p2.val} tại chỉ số ${p2.idx}`,
+            minIdx:p2.idx,
+            minVal:p2.val,
+            compsNow:comps,
+            line:4
+          });
+          nextRound.push(p2);
+        }else{
+          steps.push({
+            type:"winner",
+            compare:[p1.idx],
+            msg:`Người thắng (nhỏ hơn): ${p1.val} tại chỉ số ${p1.idx}`,
+            minIdx:p1.idx,
+            minVal:p1.val,
+            compsNow:comps,
+            line:4
+          });
+          nextRound.push(p1);
+        }
+      }else{
+        // tự qua vòng sau
+        const solo = roundPlayers[i];
+        steps.push({
+          type:"bye",
+          compare:[solo.idx],
+          msg:`Tự động vào vòng sau: ${solo.val} (idx ${solo.idx})`,
+          minIdx:solo.idx,
+          minVal:solo.val,
+          compsNow:comps,
+          line:2
+        });
+        nextRound.push(solo);
+      }
+    }
+    roundPlayers = nextRound;
+    roundNum++;
+  }
+
+  if(roundPlayers.length===1){
+    const champ = roundPlayers[0];
+    steps.push({
+      type:"final",
+      compare:[champ.idx],
+      msg:`Kết quả: MIN = ${champ.val} tại chỉ số ${champ.idx}`,
+      minIdx:champ.idx,
+      minVal:champ.val,
+      compsNow:comps,
+      line:5
+    });
+  }
+  return steps;
+}
+
+/* Mã giả hiển thị */
+const codeLinear = [
+  "minVal ← A[0]; minIdx ← 0",
+  "i ← 1",
+  "Trong khi i < n:",
+  "    Nếu A[i] < minVal:",
+  "        minVal ← A[i]; minIdx ← i",
+  "    i ← i + 1",
+  "Trả về (minVal, minIdx)"
+];
+const codeDivide = [
+  "function Min(l,r):",
+  "    nếu l==r: return (A[l], l)",
+  "    mid=(l+r)/2",
+  "    (Lval,Lidx)=Min(l,mid)",
+  "    (Rval,Ridx)=Min(mid+1,r)",
+  "    nếu Lval<Rval return (Lval,Lidx)",
+  "    else return (Rval,Ridx)"
+];
+const codeTournament = [
+  "players ← tất cả (giá trị, chỉ số)",
+  "while số người chơi > 1:",
+  "    ghép cặp và so sánh từng cặp",
+  "    người nhỏ hơn đi tiếp",
+  "return người cuối cùng (MIN)"
+];
+
+function renderCode(){
+  const list = $("code");
+  list.innerHTML = "";
+  let src;
+  if(state.algo==="linear") src=codeLinear;
+  else if(state.algo==="divide") src=codeDivide;
+  else src=codeTournament;
+
+  src.forEach((ln,idx)=>{
+    const li=document.createElement("li");
+    li.textContent=(idx+1)+". "+ln;
+    if(state.line===idx) li.classList.add("active");
+    list.appendChild(li);
+  });
+}
+
+/* Lấy các chỉ số đang so sánh ở bước hiện tại (divide/tournament) */
+function getCurrentCompareIndices(){
+  if(state.algo==="linear") {
+    return [];
+  }
+  if(state.timeline.length===0) return [];
+  const step = state.timeline[state.stepPtr] || state.timeline[state.timeline.length-1];
+  return step && step.compare ? step.compare.slice() : [];
+}
+
+/* Render bảng mảng + badge + giải thích */
+function renderArray(){
+  $("n").value = state.n;
+  $("nLabel").textContent = state.n;
+  $("speed").value = state.speed;
+  $("speedLabel").textContent = state.speed.toFixed(1)+"s/bước";
+  $("algo").value = state.algo;
+
+  $("badgeI").textContent = state.i;
+  $("badgeMinVal").textContent = (state.minVal===null?"?":state.minVal);
+  $("badgeMinIdx").textContent = (state.minIdx===null?"?":state.minIdx);
+  $("badgeC").textContent = state.comps;
+  $("badgeAlgo").textContent =
+    state.algo==="linear"
+      ? "Linear Scan"
+      : state.algo==="divide"
+        ? "Divide & Conquer"
+        : "Tournament";
+
+  const grid = $("grid");
+  grid.innerHTML = "";
+  const currentCompare = getCurrentCompareIndices();
+
+  for(let idx=0; idx<state.arr.length; idx++){
+    const cell = state.arr[idx];
+    let cls = "cell ";
+    if(cell.state==="minNow") cls += "minNow ";
+    if(cell.state==="checking") cls += "checking ";
+    if(cell.state==="checked") cls += "checked ";
+
+    // timeline-based highlight (divide/tournament):
+    if(currentCompare.includes(idx)){
+      if(!cls.includes("minNow")) cls += "checking ";
+    }
+    if(state.minIdx===idx && !cls.includes("minNow")) {
+      cls += "minNow ";
+    }
+
+    const d = document.createElement("div");
+    d.className = cls.trim();
+    d.innerHTML = `<span class="idx">${idx}</span>${cell.value}`;
+    grid.appendChild(d);
+  }
+
+  $("explain").textContent = state.explain || "";
+}
+
+/* Render tổng thể */
+function renderAll(){
+  renderArray();
+  renderCode();
+  updateExpectedQuiz();
+}
+
+/* ===== Simulation start/reset ===== */
+function startSimulation(){
+  state.autoPlay = false;
+  clearTimeout(state.timer);
+
+  if(state.arr.length===0){
+    state.explain = "Mảng rỗng. Hãy tạo mảng trước.";
+    renderAll();
+    return;
+  }
+
+  if(state.algo==="linear"){
+    resetLinear();
+    logPush(`Khởi tạo: minVal=${state.minVal} tại idx ${state.minIdx}`);
+    state.explain = `Bước đầu: minVal=${state.minVal} tại idx ${state.minIdx}. Bấm Bước tiếp ▷`;
+    state.line = 0;
+  }
+  else if(state.algo==="divide"){
+    state.timeline = buildDivideTimeline();
+    state.stepPtr = 0;
+    applyTimelineStep();
+    logPush("Khởi tạo Divide & Conquer (tìm MIN).");
+  }
+  else {
+    state.timeline = buildTournamentTimeline();
+    state.stepPtr = 0;
+    applyTimelineStep();
+    logPush("Khởi tạo Tournament (tìm MIN).");
+  }
+
+  renderAll();
+}
+
+/* AUTO LOOP */
+function autoLoop(){
+  if(!state.autoPlay) return;
+  if(state.algo==="linear"){
+    if(linearStepCore()){
+      state.timer = setTimeout(autoLoop, Math.max(100, state.speed*700));
+    } else {
+      state.autoPlay=false;
+    }
+  } else {
+    if(stepTimeline()){
+      state.timer = setTimeout(autoLoop, Math.max(100, state.speed*700));
+    } else {
+      state.autoPlay=false;
+    }
+  }
+  renderAll();
+}
+
+/* Bắt đầu chạy AUTO */
+function startAuto(){
+  clearTimeout(state.timer);
+  state.autoPlay = true;
+
+  if(state.algo==="linear"){
+    resetLinear();
+    logPush(`Khởi tạo: minVal=${state.minVal} tại idx ${state.minIdx}`);
+    state.explain = "Đang chạy tự động...";
+    linearStepCore(); // first step
+  } else {
+    state.timeline = (
+      state.algo==="divide"
+        ? buildDivideTimeline()
+        : buildTournamentTimeline()
+    );
+    state.stepPtr = 0;
+    state.autoPlay = true;
+    state.explain = "Đang chạy tự động...";
+    applyTimelineStep();
+    stepTimeline(); // advance first
+  }
+
+  renderAll();
+  state.timer = setTimeout(autoLoop, Math.max(100, state.speed*400));
+}
+
+/* ======================
+   LINEAR: THỰC HIỆN 1 STEP (tìm MIN)
+   ====================== */
+function linearStepCore(){
+  // Đã duyệt hết?
+  if(state.i >= state.arr.length){
+    state.explain = `Kết thúc. MIN = ${state.minVal} tại chỉ số ${state.minIdx}.`;
+    state.line = 6;
+    logPush(state.explain);
+    return false;
+  }
+
+  // đổi checking cũ -> checked
+  for(let k=0;k<state.arr.length;k++){
+    if(state.arr[k].state==="checking") state.arr[k].state="checked";
+  }
+
+  // Nếu đang ở i=0 thì sang i=1 trước khi so sánh
+  if(state.i===0){
+    state.i=1;
+  }
+
+  if(state.i >= state.arr.length){
+    state.explain = `Kết thúc. MIN = ${state.minVal} tại chỉ số ${state.minIdx}.`;
+    state.line = 6;
+    logPush(state.explain);
+    return false;
+  }
+
+  const currentVal = state.arr[state.i].value;
+  state.arr[state.i].state="checking";
+  state.line = 2; // "Trong khi i < n:"
+
+  state.comps++;
+  state.line = 3; // "Nếu A[i] < minVal:"
+
+  if(currentVal < state.minVal){
+    // cập nhật MIN
+    state.minVal = currentVal;
+    state.minIdx = state.i;
+    // clear minNow cũ
+    for(let k=0;k<state.arr.length;k++){
+      if(state.arr[k].state==="minNow") state.arr[k].state="checked";
+    }
+    state.arr[state.i].state="minNow";
+
+    state.explain = `A[${state.i}]=${currentVal} nhỏ hơn MIN cũ → cập nhật MIN=${currentVal} (idx ${state.i}).`;
+    state.line = 4;
+    logPush(state.explain);
+  } else {
+    // không thay đổi min
+    if(state.arr[state.i].state!=="minNow")
+      state.arr[state.i].state="checked";
+
+    state.explain = `A[${state.i}]=${currentVal} ≥ MIN hiện tại (${state.minVal}) → giữ nguyên.`;
+    state.line = 5; // "i ← i + 1"
+    logPush(state.explain);
+  }
+
+  state.i = state.i + 1;
+  return true;
+}
+
+/* STEP thủ công cho divide/tournament */
+function applyTimelineStep(){
+  if(state.timeline.length===0) return;
+  const step = state.timeline[state.stepPtr];
+
+  // reset style
+  state.arr = state.arr.map((o,i)=>({
+    id:i,
+    value:o.value,
+    state:"checked"
+  }));
+
+  // highlight MIN được báo cáo ở step
+  if(step.minIdx!=null){
+    state.arr[step.minIdx].state="minNow";
+  }
+
+  // highlight phần tử đang xét
+  if(step.compare){
+    for(const idx of step.compare){
+      if(idx===step.minIdx) continue;
+      if(state.arr[idx]) state.arr[idx].state="checking";
+    }
+  }
+
+  state.minIdx = step.minIdx;
+  state.minVal = step.minVal;
+  state.comps  = step.compsNow;
+  state.i = step.compare && step.compare.length ? step.compare[0] : 0;
+  state.line = step.line;
+  state.explain = step.msg;
+  logPush(`[Bước ${state.stepPtr+1}] ${step.msg}`);
+}
+
+function stepTimeline(){
+  if(state.timeline.length===0) return false;
+
+  if(state.stepPtr >= state.timeline.length-1){
+    applyTimelineStep();
+    return false;
+  } else {
+    state.stepPtr++;
+    applyTimelineStep();
+    return true;
+  }
+}
+
+/* ======================
+   LOG & EXPORT
+   ====================== */
+function logPush(msg){
+  state.logLines.push(msg);
+}
+function exportLog(){
+  const blob = new Blob([state.logLines.join("\n")], {type:"text/plain;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const now = new Date();
+  const stamp =
+    now.getFullYear()
+    + ("0"+(now.getMonth()+1)).slice(-2)
+    + ("0"+now.getDate()).slice(-2)
+    + "_"
+    + ("0"+now.getHours()).slice(-2)
+    + ("0"+now.getMinutes()).slice(-2)
+    + ("0"+now.getSeconds()).slice(-2);
+
+  a.href = url;
+  a.download = "log_minfinder_" + stamp + ".txt";
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
+}
+
+/* ======================
+   QUIZ: ƯỚC LƯỢNG SỐ SO SÁNH
+   ====================== */
+function calcExpectedComparisons(){
+  const n = state.arr.length;
+  if(n===0) return null;
+  // Tối thiểu để tìm MIN bằng so sánh: n-1
+  // (tương tự tìm MAX)
+  return Math.max(0,n-1);
+}
+function updateExpectedQuiz(){
+  const exp = calcExpectedComparisons();
+  $("expected").textContent = (exp==null) ? "" : ("≈ " + exp + " so sánh");
+}
+function checkQuiz(){
+  const exp = calcExpectedComparisons();
+  const resEl = $("quizResult");
+  if(exp==null){
+    resEl.style.display="block";
+    resEl.textContent="Hãy tạo mảng trước.";
+    return;
+  }
+  const guess = Number($("quiz").value);
+  if(!Number.isFinite(guess)){
+    resEl.style.display="block";
+    resEl.textContent="Hãy nhập số nguyên.";
+    return;
+  }
+  if(guess===exp){
+    resEl.style.display="block";
+    resEl.textContent="🎉 Chuẩn luôn! Con số bạn nhập khớp lý thuyết ~ n-1 so sánh.";
+  } else {
+    resEl.style.display="block";
+    resEl.textContent=`Chưa chính xác. Lý thuyết gần đúng: ${exp} so sánh.`;
+  }
+}
+
+/* ======================
+   GÁN SỰ KIỆN UI
+   ====================== */
+function wire(){
+  $("n").addEventListener("input", e=>{
+    state.n = Number(e.target.value);
+    state.arr = createArray(state.n,true);
+    resetLinear();
+    renderAll();
+  });
+
+  $("btnMakeDistinct").addEventListener("click", ()=>{
+    state.arr = createArray(state.n,true);
+    resetLinear();
+    renderAll();
+  });
+
+  $("btnMakeMaybeDup").addEventListener("click", ()=>{
+    state.arr = createArray(state.n,false);
+    resetLinear();
+    renderAll();
+  });
+
+  $("btnUseManual").addEventListener("click", ()=>{
+    const raw = $("manualArr").value.trim();
+    if(!raw){
+      state.explain="Chuỗi trống. Ví dụ: 5, -2, 1, -2, 3";
+      renderAll();
+      return;
+    }
+    const parts = raw.split(/[\s,;]+/).filter(s=>s.length>0);
+    const nums = parts.map(x=>parseInt(x,10)).filter(v=>Number.isFinite(v));
+    state.arr = nums.map((v,i)=>({id:i,value:v,state:"idle"}));
+    state.n = state.arr.length;
+    resetLinear();
+    renderAll();
+  });
+
+  $("speed").addEventListener("input", e=>{
+    state.speed = Number(e.target.value);
+    renderAll();
+  });
+
+  $("algo").addEventListener("change", e=>{
+    state.algo = e.target.value;
+    // đổi thuật toán => reset lại trạng thái mô phỏng
+    state.timeline = [];
+    state.stepPtr = 0;
+    if(state.arr.length){
+      if(state.algo==="linear"){
+        resetLinear();
+      } else {
+        state.i = 0;
+        state.minIdx = null;
+        state.minVal = null;
+        state.comps = 0;
+        state.logLines = [];
+        state.line = null;
+        state.explain = "Bấm Bắt đầu để dựng timeline.";
+      }
+    }
+    renderAll();
+  });
+
+  $("btnRun").addEventListener("click", ()=>{
+    startSimulation();
+    renderAll();
+  });
+
+  $("btnStep").addEventListener("click", ()=>{
+    // Step thủ công
+    state.autoPlay=false;
+    clearTimeout(state.timer);
+
+    if(state.algo==="linear"){
+      // nếu chưa khởi tạo thì khởi tạo
+      if(state.minIdx===null || state.minVal===null){
+        startSimulation();
+      } else {
+        linearStepCore();
+      }
+    } else {
+      // divide / tournament
+      stepTimeline();
+    }
+    renderAll();
+  });
+
+  $("btnAuto").addEventListener("click", ()=>{
+    startAuto();
+  });
+
+  $("btnReset").addEventListener("click", ()=>{
+    state.autoPlay=false;
+    clearTimeout(state.timer);
+    state.logLines = [];
+    if(state.arr.length===0){
+      state.arr = createArray(state.n,true);
+    }
+    if(state.algo==="linear"){
+      resetLinear();
+    } else {
+      state.timeline = [];
+      state.stepPtr = 0;
+      state.i = 0;
+      state.minIdx = null;
+      state.minVal = null;
+      state.comps = 0;
+      state.line = null;
+      state.explain = "Đã làm mới. Bấm Bắt đầu để dựng timeline.";
+    }
+    renderAll();
+  });
+
+  $("btnExport").addEventListener("click", ()=>{
+    exportLog();
+  });
+
+  $("btnQuiz").addEventListener("click", ()=>{
+    checkQuiz();
+  });
+}
+
+/* ======================
+   INIT
+   ====================== */
+(function init(){
+  state.arr = createArray(state.n,true);
+  resetLinear();
+  renderAll();
+  wire();
+  $("y").textContent = new Date().getFullYear();
+})();
+</script>
+</body>
+</html>

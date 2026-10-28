@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Prime Checker Simulator — Kiểm tra số nguyên tố</title>
+  <meta name="description" content="Mô phỏng trực quan thuật toán kiểm tra tính nguyên tố của số nguyên dương N bằng phép chia thử. Có Step, Auto, log, mã giả. Chạy offline, dark UI."/>
+  <style>
+    .home-btn{
+      position:fixed; top:16px; right:16px; z-index:9999;
+      display:inline-grid; place-items:center;
+      width:44px; height:44px; border-radius:12px;
+      background:#0b1220; color:#e5e7eb;
+      border:1px solid #334155; text-decoration:none;
+      box-shadow:0 10px 30px rgba(0,0,0,.35);
+      transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+    }
+    .home-btn:hover{
+      transform:translateY(-1px);
+      box-shadow:0 14px 36px rgba(0,0,0,.45);
+      border-color:#475569;
+    }
+    .home-btn svg{
+      width:22px; height:22px;
+      stroke:currentColor; fill:none;
+      stroke-width:2; stroke-linecap:round; stroke-linejoin:round;
+    }
+
+    :root {
+      --bg1: #0b1220;
+      --bg2: #0a0f1a;
+      --card: #0e1626;
+      --panel: #0c1322;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --border: #1e293b;
+      --shadow: 0 1px 2px rgba(0,0,0,.35), 0 10px 30px rgba(2,6,23,.4);
+
+      --green-600:#059669; --green-700:#047857;
+      --sky-600:#0284c7;
+      --amber:#f59e0b;
+      --rose:#e11d48;
+
+      /* trạng thái hàng hiện tại đang xét */
+      --row-active-bg: rgba(2,132,199,.18);
+      --row-active-border:#38bdf8;
+      --row-active-fg:#7dd3fc;
+
+      /* trạng thái kết quả cuối */
+      --row-final-bg: rgba(16,185,129,.18);
+      --row-final-border:#10b981;
+      --row-final-fg:#34d399;
+
+      /* trạng thái kết luận "không nguyên tố" (hợp số) */
+      --row-fail-bg: rgba(239,68,68,.18);
+      --row-fail-border:#ef4444;
+      --row-fail-fg:#fca5a5;
+    }
+
+    html,body{
+      margin:0;padding:0;
+      background:linear-gradient(135deg,var(--bg1),var(--bg2));
+      color:var(--text);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;
+    }
+
+    .container{max-width:1180px;margin:0 auto;padding:24px;}
+    .header{text-align:center;margin-bottom:24px}
+
+    .chip{
+      display:inline-flex;align-items:center;gap:10px;
+      background:var(--card);border:1px solid var(--border);
+      border-radius:16px;padding:10px 16px;box-shadow:var(--shadow)
+    }
+    .title{font-weight:900;font-size:26px;letter-spacing:.3px}
+    .subtitle{color:var(--muted);margin-top:8px;font-size:14px;line-height:1.4}
+
+    .grid{display:grid;grid-template-columns:1fr;gap:16px}
+    @media(min-width:1024px){.grid{grid-template-columns:5fr 7fr}}
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:16px;
+      box-shadow:var(--shadow)
+    }
+    .card-h{
+      display:flex;justify-content:space-between;align-items:center;
+      padding:12px 16px;border-bottom:1px solid var(--border);font-weight:800
+    }
+    .card-b{padding:16px}
+    .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+    .badge{
+      display:inline-block;border:1px solid var(--border);
+      padding:3px 10px;border-radius:10px;
+      font-size:12px;background:#0b1220;color:#cbd5e1
+    }
+    .text-muted{color:#9ca3af}
+
+    .btn{
+      border:0;border-radius:12px;
+      padding:9px 13px;font-size:14px;
+      cursor:pointer;box-shadow:var(--shadow);font-weight:700
+    }
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+    .btn.green{background:var(--green-600);color:#fff}
+    .btn.green:hover{background:var(--green-700)}
+    .btn.blue{background:var(--sky-600);color:#fff}
+    .btn.blue:hover{filter:brightness(1.08)}
+    .btn.amber{background:var(--amber);color:#1f2937}
+    .btn.amber:hover{filter:brightness(1.08)}
+    .btn.rose{background:var(--rose);color:#fff}
+    .btn.rose:hover{filter:brightness(1.08)}
+    .btn.ghost{
+      background:transparent;border:1px solid var(--border);color:#cbd5e1
+    }
+    .btn.ghost:hover{background:#0b1220}
+
+    .slider{width:220px}
+    .input{
+      border:1px solid var(--border);border-radius:12px;
+      padding:8px 10px;background:#0b1220;color:#e5e7eb;
+      font-family:ui-monospace,Consolas,monospace;
+      font-size:14px;
+    }
+    .input.short{
+      width:110px;
+      text-align:center;
+      font-weight:700;
+      font-size:15px;
+    }
+
+    .table-wrap{
+      width:100%;
+      overflow-x:auto;
+    }
+    table.sim{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0 8px;
+      font-size:14px;
+      color:#e5e7eb;
+    }
+    table.sim thead th{
+      text-align:left;
+      font-weight:600;
+      font-size:12px;
+      color:#9ca3af;
+      padding:4px 8px;
+    }
+    table.sim tbody tr td{
+      background:#0b1220;
+      border:1px solid var(--border);
+      box-shadow:var(--shadow);
+      padding:10px 8px;
+      border-radius:12px;
+      font-family:ui-monospace,Consolas,monospace;
+      font-weight:600;
+      line-height:1.4;
+      min-width:60px;
+      text-align:center;
+      position:relative;
+    }
+    tr.active-row td{
+      background:var(--row-active-bg);
+      border-color:var(--row-active-border);
+      color:var(--row-active-fg);
+    }
+    tr.final-row td{
+      background:var(--row-final-bg);
+      border-color:var(--row-final-border);
+      color:var(--row-final-fg);
+    }
+    tr.fail-row td{
+      background:var(--row-fail-bg);
+      border-color:var(--row-fail-border);
+      color:var(--row-fail-fg);
+    }
+
+    .explain{
+      background:var(--panel);
+      border-radius:14px;
+      padding:12px;
+      box-shadow:var(--shadow);
+      margin-top:12px;
+      color:#e5e7eb;
+      font-size:14px;
+      line-height:1.4;
+      white-space:pre-line;
+    }
+
+    ol.code{
+      background:var(--panel);
+      border-radius:14px;
+      padding:12px;
+      list-style:none;
+      margin:0;
+    }
+    ol.code li{
+      padding:8px 10px;
+      border-radius:10px;
+      font-family:ui-monospace,Consolas,monospace;
+      font-size:13px;
+      line-height:1.4;
+    }
+    ol.code li.active{
+      background:rgba(250,204,21,.25);
+      box-shadow:0 0 0 2px rgba(250,204,21,.6) inset
+    }
+
+    footer{
+      margin-top:20px;
+      text-align:center;
+      font-size:12px;
+      color:#93a5bf
+    }
+  </style>
+</head>
+<body>
+<a href="index.html" class="home-btn" aria-label="Về trang chủ" title="Về trang chủ">
+  <svg viewBox="0 0 24 24">
+    <path d="M3 10l9-7 9 7"/>
+    <path d="M5 10v10a2 2 0 0 0 2 2h3v-6h4v6h3a2 2 0 0 0 2-2V10"/>
+  </svg>
+</a>
+
+<div class="container">
+  <header class="header">
+    <div class="chip">
+      <span>🔎</span>
+      <div class="title">
+        Prime Checker Simulator —
+        <span style="color:#60a5fa">Kiểm tra số nguyên tố</span>
+      </div>
+    </div>
+    <div class="subtitle">
+      Thuật toán chia thử: kiểm tra các ước d từ 2 đến ⌊√N⌋.<br/>
+      Nếu tồn tại d sao cho N % d = 0 → N không nguyên tố.<br/>
+      Nếu không tìm được → N là số nguyên tố (và N &gt; 1).<br/>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- LEFT CONTROL PANEL -->
+    <div class="left-col">
+      <div class="card">
+        <div class="card-h">Thiết lập & điều khiển</div>
+        <div class="card-b">
+
+          <div class="row">
+            <span class="badge">Nhập N</span>
+            <input id="inputN" class="input short" placeholder="ví dụ: 97" />
+          </div>
+
+          <div class="row" style="margin-top:8px">
+            <button class="btn ghost" id="btnRandomN" title="Sinh ngẫu nhiên một N dương">Ngẫu nhiên N</button>
+            <button class="btn ghost" id="btnUseN" title="Dùng N hiện tại và khởi tạo mô phỏng">Dùng N này</button>
+          </div>
+
+          <div class="row" style="margin-top:8px">
+            <span class="badge">Tốc độ Auto</span>
+            <input id="speed" type="range" min="0.5" max="4.0" step="0.1" class="slider"/>
+            <span id="speedLabel" class="badge">1.6s/bước</span>
+          </div>
+
+          <div class="row" style="margin-top:8px">
+            <button class="btn green" id="btnRun">Bắt đầu</button>
+            <button class="btn blue" id="btnStep">Bước tiếp ▷</button>
+            <button class="btn amber" id="btnAuto">Tự động ▷</button>
+            <button class="btn rose" id="btnReset">Làm mới</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="card-h">Ghi chú / Kết quả</div>
+        <div class="card-b">
+          <div class="text-muted" style="font-size:13px;line-height:1.4">
+            - Ta xét lần lượt các ước d = 2, 3, 4, ... đến ⌊√N⌋.<br/>
+            - Nếu N % d == 0 ở bất kỳ bước nào ⇒ N là HỢP SỐ (KHÔNG nguyên tố).<br/>
+            - Nếu thử hết mà không tìm ra ước chia hết ⇒ N là SỐ NGUYÊN TỐ (N &gt; 1).<br/><br/>
+
+            - Bảng bên phải liệt kê từng lần thử chia.<br/>
+            - Dòng đang xét đánh dấu xanh lam.<br/>
+            - Khi kết luận, dòng kết luận đánh dấu:<br/>
+              • Xanh lục: "Nguyên tố"<br/>
+              • Đỏ: "Không nguyên tố"
+          </div>
+
+          <div class="row" style="margin-top:12px">
+            <button class="btn ghost" id="btnExport">Xuất log .txt</button>
+          </div>
+
+          <div id="quizArea" style="margin-top:12px">
+            <div class="text-muted" style="font-size:13px;line-height:1.4">
+              Dự đoán: N là số nguyên tố hay không?
+            </div>
+            <div class="row" style="margin-top:8px">
+              <select id="quiz" class="input" style="width:140px">
+                <option value="">-- chọn câu trả lời --</option>
+                <option value="prime">Nguyên tố</option>
+                <option value="composite">Không nguyên tố</option>
+              </select>
+              <button class="btn ghost" id="btnQuiz">Kiểm tra</button>
+              <span class="badge" id="expected"></span>
+            </div>
+            <div id="quizResult" class="explain" style="display:none;margin-top:8px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT VISUAL PANEL -->
+    <div class="right-col">
+      <div class="card">
+        <div class="card-h">Bảng mô phỏng kiểm tra nguyên tố</div>
+        <div class="card-b">
+          <div class="row" style="margin-bottom:8px">
+            <span class="badge">N = <span id="badgeN">?</span></span>
+            <span class="badge">Thử d = <span id="badgeD">?</span></span>
+            <span class="badge">N % d = <span id="badgeR">?</span></span>
+            <span class="badge">Kết luận tạm = <span id="badgeStatus">?</span></span>
+          </div>
+
+          <div class="table-wrap">
+            <table class="sim">
+              <thead>
+                <tr>
+                  <th>Bước</th>
+                  <th>N</th>
+                  <th>d (ước thử)</th>
+                  <th>N % d</th>
+                  <th>Ghi chú</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody">
+                <!-- render bằng JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <div id="explain" class="explain"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="card-h">Mã giả kiểm tra số nguyên tố</div>
+        <div class="card-b">
+          <ol id="code" class="code"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>© <span id="y"></span> — Mô phỏng giáo dục, bản offline. Giao diện dark + nút màu.</footer>
+</div>
+
+<script>
+/*
+  =====================================================
+  Prime Checker Simulator — Thuật toán kiểm tra nguyên tố
+  Author: GPT-5 Thinking
+  Date: 2025-10-27
+  Offline single-file demo
+
+  Ý tưởng:
+    - Nếu N <= 1 ⇒ không nguyên tố.
+    - Nếu N <= 3 ⇒ nguyên tố (2,3).
+    - Nếu N chẵn và > 2 ⇒ không nguyên tố.
+    - Kiểm tra d từ 2..floor(sqrt(N)):
+        r = N % d
+        nếu r == 0 → kết luận "không nguyên tố"
+    - Nếu thử hết không chia hết → "nguyên tố".
+
+  Ta mô phỏng từng d:
+    history.push({step, N, d, r, note})
+    idxStep trỏ tới hàng hiện tại
+    finished + status ("prime"/"composite")
+*/
+
+const state = {
+  N: null,
+  d: null,
+  limit: null, // floor(sqrt(N))
+  step: 0,
+  finished: false,
+  status: null, // "prime" | "composite" | null
+
+  history: [], // {step,N,d,r,note}
+  idxStep: -1,
+
+  speed: 1.6,
+  autoPlay: false,
+  timer: null,
+
+  explain: "Nhập N, sau đó Bắt đầu / Step.",
+  line: null,
+  logLines: []
+};
+
+/* ============ Helpers ============ */
+const $ = (id)=>document.getElementById(id);
+function randInt(min,max){return Math.floor(Math.random()*(max-min+1))+min;}
+function floorSqrt(x){ return Math.floor(Math.sqrt(x)); }
+
+function pushLog(msg){
+  state.logLines.push(msg);
+}
+
+function exportLog(){
+  const blob = new Blob([state.logLines.join("\n")], {type:"text/plain;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const now = new Date();
+  const stamp =
+    now.getFullYear()
+    + ("0"+(now.getMonth()+1)).slice(-2)
+    + ("0"+now.getDate()).slice(-2)
+    + "_"
+    + ("0"+now.getHours()).slice(-2)
+    + ("0"+now.getMinutes()).slice(-2)
+    + ("0"+now.getSeconds()).slice(-2);
+
+  a.href = url;
+  a.download = "log_primecheck_" + stamp + ".txt";
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
+}
+
+/* ============ Core check one step ============ */
+function primeCheckOneStep(){
+  // Nếu đã kết thúc => chỉ giải thích lại
+  if(state.finished){
+    if(state.status==="prime"){
+      state.explain = `Kết luận: ${state.N} là SỐ NGUYÊN TỐ.`;
+      state.line = 5;
+    } else if(state.status==="composite"){
+      state.explain = `Kết luận: ${state.N} KHÔNG PHẢI số nguyên tố.`;
+      state.line = 4;
+    }
+    pushLog(state.explain);
+    return false;
+  }
+
+  // Nếu step=0 và chưa init logic cho d/limit thì ghi trạng thái ban đầu
+  if(state.step===0 && state.history.length===0){
+    initialClassify(); // xử lý các trường hợp đặc biệt, có thể kết thúc ngay
+    if(state.finished){
+      // Nếu kết thúc ngay (ví dụ N<=1, N=2, N chẵn,...), đã push vào history rồi
+      return false;
+    }
+    const note0 = `Bắt đầu kiểm tra N=${state.N}, sẽ thử chia từ d=2 đến ${state.limit} (là phần nguyên căn bậc 2 của ${state.N}).`;
+    state.history.push({
+      step: state.step,
+      N: state.N,
+      d: "-",
+      r: "-",
+      note: note0
+    });
+    state.idxStep = state.history.length-1;
+    state.explain = note0 + " Bấm Step để thử với d=2.";
+    state.line = 0;
+    pushLog(note0);
+    state.step++;
+    updateExpectedBadge();
+    return true;
+  }
+
+  // Nếu còn d để thử:
+  if(state.d <= state.limit){
+    const r = state.N % state.d;
+    const isDivisor = (r === 0);
+    const note = isDivisor
+      ? `${state.N} % ${state.d} = 0 ⇒ ${state.N} có ước ${state.d}, Nên ${state.N} KHÔNG phải là số nguyên tố.`
+      : `${state.N} % ${state.d} = ${r} ≠ 0 ⇒ tiếp tục.`;
+
+    state.history.push({
+      step: state.step,
+      N: state.N,
+      d: state.d,
+      r: r,
+      note: note
+    });
+    state.idxStep = state.history.length-1;
+
+    if(isDivisor){
+      state.finished = true;
+      state.status = "composite";
+      state.explain = note;
+      state.line = 4; // dòng kết luận "composite"
+      pushLog(note);
+      updateExpectedBadge();
+      return false;
+    } else {
+      state.explain = note;
+      state.line = 2; // dòng "for d..." / kiểm tra chia hết
+      pushLog(note);
+      state.d++;
+      state.step++;
+      updateExpectedBadge();
+      return true;
+    }
+  }
+
+  // Không tìm thấy ước chia hết ⇒ prime
+  state.finished = true;
+  state.status = "prime";
+  const notePrime = `${state.N} không chia hết cho bất kỳ số d nào, với 2 ≤ d ≤ ${state.limit} ⇒ ${state.N} NGUYÊN TỐ.`;
+  state.history.push({
+    step: state.step,
+    N: state.N,
+    d: "-",
+    r: "-",
+    note: notePrime
+  });
+  state.idxStep = state.history.length-1;
+  state.explain = notePrime;
+  state.line = 5; // dòng kết luận prime
+  pushLog(notePrime);
+  updateExpectedBadge();
+  return false;
+}
+
+/* ============ Initial classify / edge cases ============ */
+function initialClassify(){
+  // Đọc N
+  const N = state.N;
+  state.limit = floorSqrt(N);
+  state.d = 2;
+
+  // Trường hợp đặc biệt:
+  if(!Number.isFinite(N) || N < 2){
+    state.finished = true;
+    state.status = "composite"; // theo định nghĩa toán phổ thông, <2 không là số nguyên tố
+    const note = `N=${N} < 2 ⇒ KHÔNG phải số nguyên tố.`;
+    pushStateRowImmediate(note,true);
+    return;
+  }
+  if(N===2 || N===3){
+    state.finished = true;
+    state.status = "prime";
+    const note = `N=${N} là một trong {2,3} ⇒ NGUYÊN TỐ.`;
+    pushStateRowImmediate(note,false,true);
+    return;
+  }
+  if(N % 2 === 0){
+    state.finished = true;
+    state.status = "composite";
+    const note = `N=${N} chẵn và >2 ⇒ có ước 2 ⇒ ${N} KHÔNG phải là số NGUYÊN TỐ.`;
+    pushStateRowImmediate(note,true);
+    return;
+  }
+
+  // Nếu không kết thúc ngay: tiếp tục kiểm tra từ d=2..√N
+  // Hơi tối ưu: ta có thể bắt đầu từ d=3 và nhảy 2 bước để bỏ số chẵn,
+  // nhưng để dạy cơ bản ta cứ d=2,3,4,... cho dễ hiểu trực quan.
+}
+
+/* Push vào history nếu kết thúc sớm (edge cases) */
+function pushStateRowImmediate(note,isComposite,isPrime){
+  state.history.push({
+    step: state.step,
+    N: state.N,
+    d: "-",
+    r: "-",
+    note: note
+  });
+  state.idxStep = state.history.length-1;
+  state.explain = note;
+  state.line = isComposite ? 4 : 5;
+  pushLog(note);
+  state.step++;
+  updateExpectedBadge();
+}
+
+/* ============ AUTO LOOP ============ */
+function autoLoop(){
+  if(!state.autoPlay) return;
+  const cont = primeCheckOneStep();
+  renderAll();
+  if(cont){
+    state.timer = setTimeout(autoLoop, Math.max(100, state.speed*700));
+  }else{
+    state.autoPlay=false;
+  }
+}
+
+/* ============ Init / Reset from input ============ */
+function initFromInput(){
+  const vN = parseInt($("inputN").value,10);
+  if(!Number.isFinite(vN)){
+    state.explain = "Giá trị N không hợp lệ. Hãy nhập số nguyên dương.";
+    renderAll();
+    return;
+  }
+
+  state.N = Math.abs(vN); // dùng trị tuyệt đối
+  state.step = 0;
+  state.finished = false;
+  state.status = null;
+  state.history = [];
+  state.idxStep = -1;
+  state.explain = `Khởi tạo N=${state.N}. Sẵn sàng kiểm tra.`;
+  state.line = null;
+  state.logLines = [];
+  pushLog(`Khởi tạo với N=${state.N}`);
+  updateExpectedBadge();
+  renderAll();
+}
+
+function resetAll(){
+  state.autoPlay=false;
+  clearTimeout(state.timer);
+
+  state.N = null;
+  state.d = null;
+  state.limit = null;
+  state.step = 0;
+  state.finished = false;
+  state.status = null;
+  state.history = [];
+  state.idxStep = -1;
+  state.explain = "Đã làm mới. Nhập N rồi 'Bắt đầu' hoặc 'Step'.";
+  state.line = null;
+  state.logLines = [];
+  updateExpectedBadge();
+  renderAll();
+}
+
+/* ============ Quiz / expected badge ============ */
+function updateExpectedBadge(){
+  // Khi kết thúc ta biết kết luận --> hiển thị badge gợi ý
+  if(state.finished){
+    $("expected").textContent =
+      state.status==="prime" ? "N là NGUYÊN TỐ" : "N KHÔNG nguyên tố";
+  }else{
+    $("expected").textContent = "";
+  }
+}
+
+function checkQuiz(){
+  const resEl = $("quizResult");
+  const guess = $("quiz").value; // "prime", "composite", hoặc ""
+
+  if(state.N===null){
+    resEl.style.display="block";
+    resEl.textContent="Hãy nhập N và bắt đầu mô phỏng trước.";
+    return;
+  }
+
+  if(!guess){
+    resEl.style.display="block";
+    resEl.textContent="Hãy chọn một đáp án trước.";
+    return;
+  }
+
+  if(!state.finished){
+    resEl.style.display="block";
+    resEl.textContent="Thuật toán chưa kết thúc nên chưa thể chấm chắc chắn. Hãy Step/AUTO thêm.";
+    return;
+  }
+
+  // chấm
+  if(
+    (guess==="prime" && state.status==="prime") ||
+    (guess==="composite" && state.status==="composite")
+  ){
+    resEl.style.display="block";
+    resEl.textContent="🎉 Chính xác!";
+  } else {
+    resEl.style.display="block";
+    resEl.textContent=`Chưa đúng. Kết quả thực tế: ${state.status==="prime" ? "NGUYÊN TỐ" : "KHÔNG nguyên tố"}.`;
+  }
+}
+
+/* ============ RENDER CODE (mã giả thuật toán) ============ */
+const codeLines = [
+  "Nếu N ≤ 1: trả về 'không nguyên tố'",
+  "Nếu N ≤ 3: trả về 'nguyên tố'",
+  "Nếu N chẵn (>2): trả về 'không nguyên tố'",
+  "Cho d chạy từ 2 đến ⌊√N⌋:",
+  "    nếu N % d == 0: trả về 'không nguyên tố'",
+  "Nếu không tìm thấy ước: trả về 'nguyên tố'"
+];
+
+function renderCode(){
+  const list = $("code");
+  list.innerHTML = "";
+  codeLines.forEach((ln,idx)=>{
+    const li=document.createElement("li");
+    li.textContent=(idx+1)+". "+ln;
+    if(state.line===idx) li.classList.add("active");
+    list.appendChild(li);
+  });
+}
+
+/* ============ RENDER TABLE ============ */
+function renderTable(){
+  const tbody = $("tableBody");
+  tbody.innerHTML = "";
+
+  for(let i=0;i<state.history.length;i++){
+    const row = state.history[i];
+    const tr = document.createElement("tr");
+
+    // nếu đã kết thúc:
+    if(i===state.history.length-1 && state.finished){
+      if(state.status==="prime"){
+        tr.className = "final-row";
+      } else if(state.status==="composite"){
+        tr.className = "fail-row";
+      }
+    } else if(i===state.idxStep && !state.finished){
+      tr.className = "active-row";
+    }
+
+    const tdStep=document.createElement("td");
+    const tdN=document.createElement("td");
+    const tdD=document.createElement("td");
+    const tdR=document.createElement("td");
+    const tdNote=document.createElement("td");
+
+    tdStep.textContent=row.step;
+    tdN.textContent=row.N;
+    tdD.textContent=row.d;
+    tdR.textContent=row.r;
+    tdNote.textContent=row.note;
+
+    tr.appendChild(tdStep);
+    tr.appendChild(tdN);
+    tr.appendChild(tdD);
+    tr.appendChild(tdR);
+    tr.appendChild(tdNote);
+
+    tbody.appendChild(tr);
+  }
+}
+
+/* ============ RENDER BADGES + EXPLAIN ============ */
+function renderStatusPanel(){
+  const cur = state.history[state.idxStep] || null;
+
+  $("badgeN").textContent = state.N===null?"?":state.N;
+  $("badgeD").textContent = cur && cur.d!==undefined ? cur.d : (state.d ?? "?");
+  $("badgeR").textContent = cur && cur.r!==undefined ? cur.r : "?";
+
+  let st = "?";
+  if(state.status==="prime") st="NGUYÊN TỐ";
+  else if(state.status==="composite") st="KHÔNG nguyên tố";
+  $("badgeStatus").textContent = st;
+
+  $("speed").value = state.speed;
+  $("speedLabel").textContent = state.speed.toFixed(1)+"s/bước";
+
+  $("explain").textContent = state.explain || "";
+}
+
+/* ============ RENDER ALL ============ */
+function renderAll(){
+  renderStatusPanel();
+  renderTable();
+  renderCode();
+  $("y").textContent = new Date().getFullYear();
+}
+
+/* ============ EVENT WIRING ============ */
+function wire(){
+  $("btnRandomN").addEventListener("click", ()=>{
+    const n = randInt(2,200); // số ngẫu nhiên dương
+    $("inputN").value = n;
+  });
+
+  $("btnUseN").addEventListener("click", ()=>{
+    initFromInput();
+  });
+
+  $("speed").addEventListener("input", e=>{
+    state.speed = Number(e.target.value);
+    renderAll();
+  });
+
+  $("btnRun").addEventListener("click", ()=>{
+    // Nếu chưa init thì init
+    if(state.N===null){
+      initFromInput();
+    }
+    const did = primeCheckOneStep();
+    renderAll();
+  });
+
+  $("btnStep").addEventListener("click", ()=>{
+    state.autoPlay=false;
+    clearTimeout(state.timer);
+    if(state.N===null){
+      initFromInput();
+    }
+    primeCheckOneStep();
+    renderAll();
+  });
+
+  $("btnAuto").addEventListener("click", ()=>{
+    state.autoPlay=true;
+    clearTimeout(state.timer);
+    if(state.N===null){
+      initFromInput();
+    }
+    primeCheckOneStep(); // chạy 1 bước đầu
+    renderAll();
+    state.timer = setTimeout(autoLoop, Math.max(100, state.speed*400));
+  });
+
+  $("btnReset").addEventListener("click", ()=>{
+    state.autoPlay=false;
+    clearTimeout(state.timer);
+    resetAll();
+  });
+
+  $("btnExport").addEventListener("click", ()=>{
+    exportLog();
+  });
+
+  $("btnQuiz").addEventListener("click", ()=>{
+    checkQuiz();
+    $("quizResult").style.display="block";
+  });
+}
+
+/* ============ INIT ============ */
+(function init(){
+  // Prefill demo N
+  $("inputN").value = 97;
+  state.speed = 1.6;
+  resetAll();
+  wire();
+  renderAll();
+})();
+</script>
+</body>
+</html>

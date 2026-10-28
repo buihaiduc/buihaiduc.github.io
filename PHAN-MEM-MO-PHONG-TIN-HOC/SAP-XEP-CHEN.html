@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Insertion Sort Simulator – Offline</title>
+  <style>
+    .home-btn{
+    position:fixed; top:16px; right:16px; z-index:9999;
+    display:inline-grid; place-items:center;
+    width:44px; height:44px; border-radius:12px;
+    background:#0b1220; color:#e5e7eb;
+    border:1px solid #334155; text-decoration:none;
+    box-shadow:0 10px 30px rgba(0,0,0,.35);
+    transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+  }
+  .home-btn:hover{ transform:translateY(-1px); box-shadow:0 14px 36px rgba(0,0,0,.45); border-color:#475569; }
+  .home-btn svg{ width:22px; height:22px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    :root{
+      --bg:#0f172a;
+      --panel:#0b1220;
+      --panel2:#111827;
+      --border:#1f2937;
+      --text:#e5e7eb;
+      --text-dim:#94a3b8;
+      --accent:#2563eb;
+      --accent2:#16a34a;
+      --accent3:#f59e0b;
+      --ring-yellow:rgba(253,224,71,.8);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial
+    }
+    .wrap{max-width:1200px;margin:0 auto;padding:24px}
+    h1{
+      font-size:28px;
+      font-weight:800;
+      margin:0 0 6px;
+      text-align:center;
+      color:#fff;
+    }
+    .sub{
+      font-size:13px;
+      color:var(--text-dim);
+      text-align:center;
+      margin-bottom:16px
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:1fr 3fr;
+      gap:16px
+    }
+
+    .card{
+      background:#0b1325;
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:16px
+    }
+    .card.dark{background:#0b1220}
+
+    label{
+      font-size:13px;
+      color:#dbe3ef;
+      display:block;
+    }
+    .row{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      margin-top:6px
+    }
+    .divider{
+      height:1px;
+      background:var(--border);
+      margin:10px 0
+    }
+
+    input[type="number"],
+    input[type="text"]{
+      padding:8px 10px;
+      border-radius:8px;
+      border:1px solid var(--border);
+      background:#0b1120;
+      color:var(--text);
+      font-size:14px;
+      line-height:1.2;
+      flex:1;
+      min-width:0;
+    }
+    input[type="range"]{
+      width:100%;
+    }
+
+    .btn{
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid var(--border);
+      background:#0f1a2e;
+      color:var(--text);
+      cursor:pointer;
+      font-weight:600;
+      font-size:14px;
+      line-height:1.2;
+    }
+    .btn.primary{
+      background:var(--accent);
+      border-color:transparent;
+      color:#fff;
+    }
+    .btn.green{
+      background:var(--accent2);
+      border-color:transparent;
+      color:#fff;
+    }
+    .btn.blue{
+      background:#1d4ed8;
+      border-color:transparent;
+      color:#fff;
+    }
+    .btn:hover{
+      filter:brightness(1.08)
+    }
+    .controls{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      margin-top:10px
+    }
+
+    .counter{
+      font-size:14px;
+      color:#cbd5e1;
+      margin-bottom:8px
+    }
+
+    .bar-area{
+      position:relative;
+      background:#0f172a;
+      border-radius:12px;
+      border:1px solid var(--border);
+      display:flex;
+      align-items:flex-end;
+      gap:16px;
+      height:320px;
+      padding:24px 16px 48px 40px;
+      overflow:hidden;
+    }
+
+    /* Thanh cột bình thường */
+    .bar{
+      width:64px;
+      border-radius:8px;
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+      font-size:14px;
+      padding-bottom:4px;
+      color:#fff;
+      transition:height .2s ease;
+      box-shadow:inset 0 -20px 40px rgba(0,0,0,.15);
+      user-select:none;
+      border:0;
+    }
+
+    /* Ô trống nét đứt màu vàng */
+    .hole{
+      width:64px;
+      border-radius:8px;
+      border:4px dashed var(--accent3);
+      background:transparent;
+      height:5px;
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+      font-size:14px;
+      padding-bottom:4px;
+      color:#fff;
+      box-shadow:none;
+    }
+
+    /* Khối key nổi bên phải */
+    .keyWrap{
+      position:absolute;
+      right:16px;
+      bottom:16px;
+      width:64px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:flex-end;
+      text-align:center;
+      pointer-events:none;
+    }
+    .keyBox{
+      min-width:64px;
+      min-height:96px;
+      border-radius:12px;
+      background:var(--accent3);
+      color:#1f2937;
+      font-weight:700;
+      font-size:20px;
+      line-height:1;
+      border:2px solid var(--ring-yellow);
+      box-shadow:0 10px 30px rgba(0,0,0,.5);
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+      padding-bottom:8px;
+    }
+    .keyLabel{
+      color:#cbd5e1;
+      font-size:12px;
+      margin-top:4px;
+    }
+
+    .note{
+      margin-top:10px;
+      background:#0b1220;
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:10px;
+      font-size:14px;
+      color:#dbe3ef;
+      min-height:42px
+    }
+
+    /* màu cột theo ID gốc */
+    .c-rose{background:#f43f5e}
+    .c-amber{background:#f59e0b}
+    .c-emerald{background:#10b981}
+    .c-cyan{background:#06b6d4}
+    .c-indigo{background:#6366f1}
+    .c-fuchsia{background:#d946ef}
+    .c-lime{background:#84cc16}
+    .c-orange{background:#fb923c}
+    .c-teal{background:#14b8a6}
+    .c-violet{background:#8b5cf6}
+  </style>
+</head>
+<body>
+  <a href="index.html" class="home-btn" aria-label="Về trang chủ" title="Về trang chủ">
+  <svg viewBox="0 0 24 24">
+    <path d="M3 10l9-7 9 7"/>
+    <path d="M5 10v10a2 2 0 0 0 2 2h3v-6h4v6h3a2 2 0 0 0 2-2V10"/>
+  </svg>
+</a>
+  <div class="wrap">
+    <h1>Insertion Sort Simulator – Mô phỏng Sắp xếp Chèn (Offline)</h1>
+    <div class="sub">
+      Màu theo ID gốc (không đổi). Key có viền sáng. Dời phần tử sang phải để trống vị trí cũ. Danh sách cố định vị trí.
+    </div>
+
+    <div class="grid">
+      <!-- Cột điều khiển -->
+      <div class="card">
+        <label>Số phần tử</label>
+        <div class="row">
+          <input id="inpN" type="number" value="10" min="2" max="80" style="flex:0 0 auto; width:70px"/>
+          <button id="btnRnd" class="btn primary">Tạo ngẫu nhiên</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <label>Dãy số tự nhập</label>
+        <div class="row">
+          <input id="inpText" type="text" placeholder="vd: 5 3 9 7 2"/>
+          <button id="btnApply" class="btn">Áp dụng</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <label id="lblSpeed">Tốc độ tự động: 600ms</label>
+        <input id="rngSpeed" type="range" min="100" max="1500" step="50" value="600"/>
+
+        <div class="controls">
+          <button id="btnAuto" class="btn green">Tự động</button>
+          <button id="btnNext" class="btn blue">Thao tác tiếp</button>
+          <button id="btnPrev" class="btn">Quay lại</button>
+          <button id="btnReset" class="btn">Làm mới</button>
+        </div>
+      </div>
+
+      <!-- Khu mô phỏng -->
+      <div class="card dark">
+        <div id="counter" class="counter">Thao tác: 0/0</div>
+
+        <!-- Vùng cột + key nổi -->
+        <div id="barArea" class="bar-area"></div>
+
+        <div id="note" class="note">Sẵn sàng.</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+
+  // Tạo element tiện
+  const createEl = (tag, props={}, ...kids)=>{
+    const n=document.createElement(tag);
+    for(const k in props){
+      if(k==="class") n.className=props[k];
+      else if(k==="style") Object.assign(n.style,props[k]);
+      else n.setAttribute(k,props[k]);
+    }
+    kids.forEach(c=>{
+      if(typeof c==="string") n.appendChild(document.createTextNode(c));
+      else if(c) n.appendChild(c);
+    });
+    return n;
+  };
+
+  // Bảng màu ID gốc
+  const palette=["c-rose","c-amber","c-emerald","c-cyan","c-indigo",
+                 "c-fuchsia","c-lime","c-orange","c-teal","c-violet"];
+
+  function colorMapOf(n){
+    const m=new Map();
+    for(let i=0;i<n;i++){
+      m.set(i, palette[i % palette.length]);
+    }
+    return m;
+  }
+
+  // Chuyển [5,3,9,7,2] → [{v:5,id:0},{v:3,id:1},...]
+  const toItems = arr => arr.map((v,i)=>({v,id:i}));
+
+  // clone mảng object/hoặc null
+  const cloneItems = a => a.map(x=>x?{...x}:null);
+
+  // Tạo snapshot cho mỗi bước
+  const mkStep = s => ({
+    array: cloneItems(s.array),
+    i: s.i,
+    j: s.j,
+    keyItem: s.keyItem ? {...s.keyItem} : null,
+    phase: s.phase,
+    note: s.note,
+    colorMap: new Map(s.colorMap)
+  });
+
+  // Sinh toàn bộ các bước cho sắp xếp chèn
+  function buildSteps(arr){
+    const items = toItems(arr);
+    const colorMap = colorMapOf(items.length);
+    const steps = [];
+
+    if(items.length === 0){
+      steps.push(mkStep({
+        array:[],
+        i:null,j:null,
+        keyItem:null,
+        phase:'done',
+        note:'Dãy rỗng',
+        colorMap
+      }));
+      return steps;
+    }
+
+    // Bắt đầu, a[0] xem như đã sắp xếp
+    steps.push(mkStep({
+      array:items,
+      i:null,j:null,
+      keyItem:null,
+      phase:'init',
+      note:'Bắt đầu: coi a[0] đã sắp xếp.',
+      colorMap
+    }));
+
+    // Làm việc trên bản sao
+    const a = cloneItems(items);
+
+    for(let i=1;i<a.length;i++){
+      const keyItem = a[i];   // phần tử cần chèn
+      a[i] = null;            // nhấc nó ra khỏi vị trí -> tạo lỗ
+      steps.push(mkStep({
+        array:a,
+        i,
+        j:i-1,
+        keyItem,
+        phase:'hole',
+        note:`Nhấc a[${i}] = ${keyItem.v}`,
+        colorMap
+      }));
+
+      let j = i-1;
+      while(j>=0 && a[j] && a[j].v > keyItem.v){
+        // dồn phần tử lớn sang phải
+        a[j+1] = a[j];
+        a[j] = null;
+        steps.push(mkStep({
+          array:a,
+          i,
+          j,
+          keyItem,
+          phase:'shift',
+          note:`Dời a[${j}] sang phải`,
+          colorMap
+        }));
+        j--;
+      }
+
+      // chèn keyItem vào vị trí đúng
+      a[j+1] = keyItem;
+      steps.push(mkStep({
+        array:a,
+        i,
+        j,
+        keyItem,
+        phase:'insert',
+        note:`Chèn key = ${keyItem.v} vào a[${j+1}]`,
+        colorMap
+      }));
+    }
+
+    // Kết thúc
+    steps.push(mkStep({
+      array:a,
+      i:null,j:null,
+      keyItem:null,
+      phase:'done',
+      note:'Kết thúc',
+      colorMap
+    }));
+
+    return steps;
+  }
+
+  // DOM refs
+  const inpN      = $("#inpN");
+  const btnRnd    = $("#btnRnd");
+  const inpText   = $("#inpText");
+  const btnApply  = $("#btnApply");
+  const rngSpeed  = $("#rngSpeed");
+  const lblSpeed  = $("#lblSpeed");
+  const btnAuto   = $("#btnAuto");
+  const btnNext   = $("#btnNext");
+  const btnPrev   = $("#btnPrev");
+  const btnReset  = $("#btnReset");
+  const counterEl = $("#counter");
+  const barArea   = $("#barArea");
+  const noteEl    = $("#note");
+
+  // State hiển thị
+  let steps   = buildSteps([5,3,9,7,2]);
+  let idx     = 0;
+  let speed   = 600;
+  let autoRun = false;
+  let timer   = null;
+
+  // Hàm render 1 bước
+  function render(){
+    const s = steps[idx];
+
+    // clear vùng cột
+    barArea.innerHTML = "";
+
+    // tính chiều cao tương đối
+    const vals = s.array.filter(x=>x).map(x=>x.v);
+    const maxV = Math.max(1, ...vals, s.keyItem ? s.keyItem.v : 0);
+
+    // Vẽ từng cột (kể cả ô null → hole)
+    s.array.forEach((item, ix)=>{
+      if(item === null){
+        // ô trống nét đứt vàng
+        const holeDiv = createEl("div",{
+          class:"hole",
+          style:{
+            // chiều cao rất thấp để nhìn giống hình chừa chỗ
+            height:"5px"
+          }
+        });
+        barArea.appendChild(holeDiv);
+      } else {
+        const h = Math.round((item.v / maxV)*250)+30;
+        const colorClass = s.colorMap.get(item.id) || "";
+        const barDiv = createEl("div",{
+          class:"bar "+colorClass,
+          style:{height:h+"px"}
+        }, String(item.v));
+        barArea.appendChild(barDiv);
+      }
+    });
+
+    // Khối key màu vàng nổi bên phải:
+    // chỉ xuất hiện trong phase 'hole' hoặc 'shift'
+    // (khi phần tử vẫn còn đang "cầm trên tay")
+    if((s.phase==='hole' || s.phase==='shift') && s.keyItem){
+      const hKey = Math.round((s.keyItem.v / maxV)*250)+30;
+      const keyWrap = createEl("div",{class:"keyWrap"});
+      const keyBox  = createEl("div",{
+        class:"keyBox",
+        style:{height:hKey+"px"}
+      }, String(s.keyItem.v));
+      const keyLab  = createEl("div",{class:"keyLabel"},"key");
+      keyWrap.appendChild(keyBox);
+      keyWrap.appendChild(keyLab);
+      barArea.appendChild(keyWrap);
+    }
+
+    // cập nhật thanh trạng thái / ghi chú
+    counterEl.textContent = "Thao tác: "+idx+"/"+(steps.length-1);
+    noteEl.textContent    = s.note;
+
+    // nút tự động hiển thị trạng thái
+    if(s.phase==='done'){
+      btnAuto.textContent = "Xong";
+    } else {
+      btnAuto.textContent = autoRun ? "Tạm dừng" : "Tự động";
+    }
+  }
+
+  // Tạo lại toàn bộ step theo mảng mới
+  function rebuildFromArray(a){
+    steps   = buildSteps(a);
+    idx     = 0;
+    autoRun = false;
+    if(timer){ clearInterval(timer); timer=null; }
+    render();
+  }
+
+  // Sự kiện
+  btnRnd.onclick = ()=>{
+    const n = Math.max(2, Math.min(50, +inpN.value || 10));
+    const a = Array.from({length:n},()=>Math.floor(Math.random()*90)+1);
+    rebuildFromArray(a);
+  };
+
+  btnApply.onclick = ()=>{
+    const parts = inpText.value
+      .split(/[ ,;\n\t]+/)
+      .map(x=>x.trim())
+      .filter(Boolean)
+      .map(Number)
+      .filter(x=>Number.isFinite(x));
+    if(parts.length){
+      rebuildFromArray(parts.slice(0,80));
+    }
+  };
+
+  rngSpeed.oninput = e=>{
+    speed = +e.target.value;
+    lblSpeed.textContent = "Tốc độ tự động: "+speed+"ms";
+    if(autoRun){
+      // khởi động lại interval với tốc độ mới
+      setAuto(false);
+      setAuto(true);
+    }
+  };
+
+  btnNext.onclick = ()=>{
+    if(idx < steps.length-1){
+      idx++;
+      render();
+    }
+  };
+
+  btnPrev.onclick = ()=>{
+    if(idx > 0){
+      idx--;
+      render();
+    }
+  };
+
+  btnReset.onclick = ()=>{
+    idx=0;
+    autoRun=false;
+    if(timer){clearInterval(timer);timer=null;}
+    render();
+  };
+
+  function setAuto(v){
+    if(v){
+      if(steps[idx].phase==='done'){
+        // đã xong rồi thì không chạy nữa
+        return;
+      }
+      autoRun=true;
+      timer=setInterval(()=>{
+        if(idx<steps.length-1){
+          idx++;
+        } else {
+          autoRun=false;
+        }
+        if(!autoRun && timer){clearInterval(timer);timer=null;}
+        render();
+      }, Math.max(60, speed));
+    } else {
+      autoRun=false;
+      if(timer){clearInterval(timer);timer=null;}
+      render();
+    }
+  }
+
+  btnAuto.onclick = ()=>{
+    if(steps[idx].phase==='done'){
+      // không chạy nữa vì đã kết thúc
+      return;
+    }
+    setAuto(!autoRun);
+  };
+
+  // lần đầu
+  render();
+})();
+</script>
+</body>
+</html>

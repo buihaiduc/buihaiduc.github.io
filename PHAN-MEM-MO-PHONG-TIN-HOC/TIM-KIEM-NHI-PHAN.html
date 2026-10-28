@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Binary Search Simulator — 10 số ngẫu nhiên</title>
+<style>
+.home-btn{
+    position:fixed; top:16px; right:16px; z-index:9999;
+    display:inline-grid; place-items:center;
+    width:44px; height:44px; border-radius:12px;
+    background:#0b1220; color:#e5e7eb;
+    border:1px solid #334155; text-decoration:none;
+    box-shadow:0 10px 30px rgba(0,0,0,.35);
+    transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+  }
+  .home-btn:hover{ transform:translateY(-1px); box-shadow:0 14px 36px rgba(0,0,0,.45); border-color:#475569; }
+  .home-btn svg{ width:22px; height:22px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  :root{
+    --bg:#0f172a;
+    --card:#111827;
+    --muted:#334155;
+    --text:#e5e7eb;
+    --accent:#22c55e;
+    --warn:#f59e0b;
+    --danger:#ef4444;
+    --outline:#60a5fa;
+    --left:#3b82f6;
+    --right:#a855f7;
+    --mid:#f59e0b;
+  }
+  html,body{height:100%}
+  body{margin:0;background:linear-gradient(180deg,#0b1223,#0f172a);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
+  .container{max-width:1100px;margin:24px auto;padding:16px}
+  .title{font-size:clamp(20px,3vw,28px);font-weight:800;letter-spacing:.3px;text-align:center;margin-bottom:12px}
+  .subtitle{opacity:.85;text-align:center;margin-bottom:18px}
+  .panel{background:rgba(17,24,39,.7);border:1px solid rgba(255,255,255,.06);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.35);padding:14px}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .controls{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr 1fr;gap:10px}
+  .controls .group{background:rgba(2,6,23,.6);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:10px}
+  label{font-size:12px;opacity:.9}
+  input[type="number"],input[type="text"]{width:100%;padding:9px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:#0b1223;color:var(--text);outline:0}
+  input[type="range"]{width:100%}
+  button{cursor:pointer;border:none;border-radius:12px;padding:10px 12px;font-weight:700;color:#0b1223;background:var(--text);transition:.2s}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  .btn-accent{background:var(--accent);color:#052e16}
+  .btn-warn{background:var(--warn);color:#1f1302}
+  .btn-danger{background:var(--danger);color:#2a0b0b}
+  .btn-primary{background:#60a5fa;color:#072042}
+  .btn-ghost{background:#0b1223;color:var(--text);border:1px solid rgba(255,255,255,.12)}
+
+  .boardWrap{margin-top:16px}
+  .board{position:relative;overflow-x:auto;white-space:nowrap;background:rgba(2,6,23,.55);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:16px}
+  .cells{display:inline-flex;gap:8px;align-items:flex-end}
+  .cell{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:56px;height:56px;border-radius:12px;background:radial-gradient(120px 80px at 50% -40%,rgba(96,165,250,.25),transparent 60%), #0b1223;border:1px solid rgba(255,255,255,.08);box-shadow:inset 0 0 0 1px rgba(255,255,255,.04),0 2px 10px rgba(0,0,0,.25);font-weight:800}
+  .cell .val{font-size:18px;outline:none}
+  .cell .val[contenteditable="true"]{cursor:text}
+  .cell .idx{position:absolute;bottom:-18px;font-size:11px;color:#a3a3a3}
+  .mid{outline:2px solid var(--mid);box-shadow:0 0 0 4px rgba(245,158,11,.18),0 6px 20px rgba(245,158,11,.35)}
+  .hit{outline:2px solid var(--accent);box-shadow:0 0 0 4px rgba(34,197,94,.25),0 6px 20px rgba(22,163,74,.35)}
+  .miss{outline:2px solid var(--danger);box-shadow:0 0 0 4px rgba(239,68,68,.2),0 6px 20px rgba(185,28,28,.35)}
+  .out-range{opacity:.25;filter:blur(1px)}
+
+  .cell.marker-left::before,
+  .cell.marker-right::before{
+    content: attr(data-mark);
+    position:absolute;top:-18px;font-size:11px;font-weight:700;padding:2px 6px;border-radius:999px;color:#0b1223
+  }
+  .cell.marker-left::before{ background:var(--left) }
+  .cell.marker-right::before{ background:var(--right) }
+
+  .cell.marker-mid{ position:relative }
+  .cell.marker-mid::after{
+    content: attr(data-tip);
+    position:absolute;bottom:64px;left:50%;transform:translateX(-50%);
+    background:#0b1223;border:1px solid rgba(255,255,255,.15);padding:6px 8px;border-radius:8px;
+    font-size:12px;white-space:nowrap;opacity:0;pointer-events:none;transition:.15s;box-shadow:0 10px 20px rgba(0,0,0,.35)
+  }
+  .cell.marker-mid:hover::after{opacity:1}
+
+  .rangeFrame{position:absolute;inset:12px 12px auto 12px;height:calc(100% - 24px);pointer-events:none}
+  .rangeBox{position:absolute;top:0;height:100%;border:2px dashed rgba(96,165,250,.6);border-radius:14px;box-shadow:inset 0 0 40px rgba(59,130,246,.08)}
+
+  .statusBar{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-top:12px;font-family:ui-monospace,Consolas,monaco,monospace}
+  .badge{padding:6px 8px;border-radius:10px;background:#0b1223;border:1px solid rgba(255,255,255,.08)}
+  .badge b{color:#93c5fd}
+  .badge-left{border-color:rgba(59,130,246,.4)}
+  .badge-right{border-color:rgba(168,85,247,.4)}
+  .badge-mid{border-color:rgba(245,158,11,.55)}
+
+  .log{height:260px;overflow-y:auto;background:#0b1223;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px;font-family:ui-monospace,Consolas,monaco,monospace;scrollbar-gutter:stable}
+
+  .footer{opacity:.7;font-size:12px;text-align:center;margin-top:10px}
+</style>
+</head>
+<body>
+  <a href="index.html" class="home-btn" aria-label="Về trang chủ" title="Về trang chủ">
+  <svg viewBox="0 0 24 24">
+    <path d="M3 10l9-7 9 7"/>
+    <path d="M5 10v10a2 2 0 0 0 2 2h3v-6h4v6h3a2 2 0 0 0 2-2V10"/>
+  </svg>
+</a>
+  <div class="container">
+    <div class="title">Binary Search Simulator — Mô phỏng Tìm kiếm Nhị phân</div>
+    <div class="subtitle">Dãy số ngẫu nhiên (≈10 số) đã sắp xếp tăng dần • Nhập K (0 &lt; K &lt; 100) rồi bắt đầu mô phỏng</div>
+
+    <div class="panel">
+      <div class="controls">
+        <div class="group">
+          <label for="kInput">Giá trị cần tìm (K)</label>
+          <input id="kInput" type="number" min="1" max="99" placeholder="Nhập K: 1..99" />
+          <div class="muted" style="margin-top:6px;font-size:12px">Gợi ý: bấm <b>Tạo dãy</b> rồi nhập K có trong dãy để thấy kết quả trúng 🟢</div>
+        </div>
+        <div class="group">
+          <label for="lenInput">Số phần tử (~10)</label>
+          <input id="lenInput" type="number" min="6" max="14" value="10" />
+          <button id="btnGen" class="btn-primary" style="width:100%;margin-top:8px">Tạo dãy ngẫu nhiên</button>
+          <button id="btnManual" style="width:100%;margin-top:8px">Dãy số tự nhập</button>
+        </div>
+        <div class="group">
+          <label>Tác vụ</label>
+          <div class="row" style="gap:8px;margin-top:6px">
+            <button id="btnStart" class="btn-accent">Bắt đầu</button>
+            <button id="btnStep">Bước tiếp ▶</button>
+          </div>
+          <div class="row" style="gap:8px;margin-top:6px">
+            <button id="btnAuto" class="btn-warn">Tự động ⏵</button>
+            <button id="btnUndo" class="btn-ghost">Quay lại một bước ⤺</button>
+            <button id="btnReset" class="btn-danger">Làm mới</button>
+          </div>
+        </div>
+        <div class="group">
+          <label for="speedRange">Tốc độ tự động (ms/bước)</label>
+          <input id="speedRange" type="range" min="400" max="2000" value="900" />
+          <div class="row" style="justify-content:space-between;margin-top:4px;font-size:12px">
+            <span>Chậm</span><span>Nhanh</span>
+          </div>
+        </div>
+        <div class="group">
+          <label>Trạng thái</label>
+          <div class="statusBar" id="status">
+            <span class="badge badge-left">Left: <b id="stLeft">–</b></span>
+            <span class="badge badge-right">Right: <b id="stRight">–</b></span>
+            <span class="badge badge-mid">Mid: <b id="stMid">–</b></span>
+            <span class="badge">Bước: <b id="stSteps">0</b></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="boardWrap">
+        <div class="board" id="board">
+          <div class="rangeFrame"><div class="rangeBox" id="rangeBox" style="left:0;width:0"></div></div>
+          <div class="cells" id="cells"></div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px">
+        <div class="panel" style="padding:10px">
+          <div style="font-weight:700;margin-bottom:6px">Nhật ký thuật toán</div>
+          <div id="log" class="log"></div>
+        </div>
+        <div class="panel" style="padding:10px">
+          <div style="font-weight:700;margin-bottom:6px">Gợi ý học tập</div>
+          <ul style="margin:0 0 0 18px">
+            <li><span style="color:var(--left);font-weight:700">Left</span> • <span style="color:var(--right);font-weight:700">Right</span> • <span style="color:var(--mid);font-weight:700">Mid</span> được tô nổi để dễ quan sát.</li>
+            <li>Khởi động: hiển thị <b>Left, Right, Mid</b> với <b>Bước = 0</b>. Mỗi lần <b>Bước tiếp</b>: so sánh và cập nhật <b>Left/Right</b> tức thì; nếu còn phạm vi, tính <b>Mid</b> mới.</li>
+            <li>Có thể <b>Quay lại một bước</b> để xem lại trạng thái trước đó.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer">© 2025 Binary Search Simulator. No-CDN, chạy offline trong trình duyệt.</div>
+    </div>
+  </div>
+
+  <!-- Modal manual input -->
+  <div id="backdrop" class="modal-backdrop" style="position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:9999">
+    <div id="modalCard" class="modal" style="width:min(720px,92vw);background:#0b1223;border:1px solid rgba(255,255,255,.12);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.5);padding:16px">
+      <h3 style="margin:0 0 8px 0">Nhập dãy số thủ công</h3>
+      <div class="help" style="font-size:12px;color:#cbd5e1;margin-bottom:10px">Nhập 6..14 số nguyên (1..99), <b>không trùng</b>, cách nhau bằng dấu phẩy. VD: <code>3, 9, 12, 25, 40, 41, 58, 73, 88, 97</code></div>
+      <textarea id="taManual" style="width:100%;min-height:120px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:#070d1a;color:var(--text);padding:10px;resize:vertical"></textarea>
+      <div id="errBox" class="err" style="margin-top:8px;font-size:12px;color:#fecaca;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);padding:8px;border-radius:10px;display:none"></div>
+      <div class="bar" style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
+        <button id="btnCancel" class="btn-ghost" type="button">Huỷ</button>
+        <button id="btnApply" class="btn-accent" type="button">Áp dụng</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  // --- State ---
+  let arr = [];
+  let left = 0, right = -1, mid = -1, targetK = null, steps = 0, timer = null, running = false;
+  let history = []; // for undo
+
+  // --- Elements ---
+  const cellsEl = document.getElementById('cells');
+  const boardEl = document.getElementById('board');
+  const rangeBoxEl = document.getElementById('rangeBox');
+  const logEl = document.getElementById('log');
+  const stLeft = document.getElementById('stLeft');
+  const stRight = document.getElementById('stRight');
+  const stMid = document.getElementById('stMid');
+  const stSteps = document.getElementById('stSteps');
+
+  const kInput = document.getElementById('kInput');
+  const lenInput = document.getElementById('lenInput');
+  const speedRange = document.getElementById('speedRange');
+
+  const btnGen = document.getElementById('btnGen');
+  const btnManual = document.getElementById('btnManual');
+  const btnStart = document.getElementById('btnStart');
+  const btnStep = document.getElementById('btnStep');
+  const btnAuto = document.getElementById('btnAuto');
+  const btnUndo = document.getElementById('btnUndo');
+  const btnReset = document.getElementById('btnReset');
+
+  // Modal
+  const backdrop = document.getElementById('backdrop');
+  const modalCard = document.getElementById('modalCard');
+  const taManual = document.getElementById('taManual');
+  const errBox = document.getElementById('errBox');
+  const btnCancel = document.getElementById('btnCancel');
+  const btnApply = document.getElementById('btnApply');
+
+  // --- Utils ---
+  function randInt(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+  function uniqueSortedRandom(len){
+    const set = new Set();
+    while(set.size < len){ set.add(randInt(1,99)); }
+    return Array.from(set).sort((x,y)=>x-y);
+  }
+  function clearLog(){ logEl.innerHTML = '' }
+  function log(msg){
+    const div = document.createElement('div');
+    div.textContent = msg; logEl.prepend(div);
+  }
+  function setStatus(){
+    stLeft.textContent = (left>=0? left : '–');
+    stRight.textContent = (right>=0? right : '–');
+    stMid.textContent = (mid>=0? mid : '–');
+    stSteps.textContent = steps;
+  }
+  function clampLen(v){ return Math.max(6, Math.min(14, v|0)) }
+  function showModal(prefill=''){
+    errBox.style.display='none'; errBox.textContent='';
+    taManual.value=prefill;
+    backdrop.style.display='flex';
+    setTimeout(()=>taManual.focus(), 0);
+  }
+  function hideModal(){ backdrop.style.display='none'; }
+
+  function validateArray(a){
+    if(a.length<6 || a.length>14) return 'Cần 6..14 phần tử.';
+    for(const v of a){
+      if(!Number.isInteger(v) || v<1 || v>99) return 'Mỗi số phải là số nguyên 1..99.';
+    }
+    const s = new Set(a);
+    if(s.size!==a.length) return 'Các phần tử phải phân biệt (không trùng).';
+    return '';
+  }
+
+  function parseManual(text){
+    const parts = text.split(',').map(s=>s.trim()).filter(s=>s.length>0);
+    if(parts.length===0) return 'Vui lòng nhập dãy số.';
+    const nums = [];
+    for(const p of parts){
+      // FIX: accept digits properly
+      if(!/^\d+$/.test(p)) return 'Chỉ nhập số nguyên, phân tách bằng dấu phẩy.';
+      nums.push(Number(p));
+    }
+    const err = validateArray(nums);
+    if(err) return err;
+    nums.sort((a,b)=>a-b);
+    arr = nums;
+    resetAll();
+    log(`Đã nhận dãy tự nhập: [${arr.join(', ')}]`);
+    return '';
+  }
+
+  // --- Editing helpers (inline) ---
+  function applyEdit(idx, newVal){
+    const v = Number(newVal);
+    if(!Number.isInteger(v) || v<1 || v>99){
+      alert('Giá trị phải là số nguyên trong khoảng 1..99.'); return false;
+    }
+    for(let i=0;i<arr.length;i++){
+      if(i!==idx && arr[i]===v){
+        alert('Các phần tử phải phân biệt (không trùng).'); return false;
+      }
+    }
+    arr[idx]=v; arr.sort((a,b)=>a-b);
+    resetSearchOnly();
+    log(`Đã cập nhật dãy và sắp xếp: [${arr.join(', ')}]. Bấm Bắt đầu để chạy lại.`);
+    return true;
+  }
+
+  function resetSearchOnly(){
+    left = 0; right = arr.length-1; mid = -1; steps = 0; targetK = null; running=false;
+    if(timer){ clearInterval(timer); timer=null; }
+    history = [];
+    btnStart.disabled=false; btnStep.disabled=true; btnAuto.disabled=true; btnAuto.textContent='Tự động ⏵';
+    setStatus(); renderCells();
+  }
+
+  // --- Render ---
+  function renderCells(highlightIndex=-1, stateClass=null){
+    cellsEl.innerHTML = '';
+    arr.forEach((val, idx)=>{
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      if(idx < left || idx > right){ cell.classList.add('out-range'); }
+      if(idx === highlightIndex){ cell.classList.add(stateClass? stateClass : 'mid'); }
+      if(idx === left){ cell.classList.add('marker-left'); cell.dataset.mark = 'L'; }
+      if(idx === right){ cell.classList.add('marker-right'); cell.dataset.mark = 'R'; }
+      if(idx === mid){ cell.classList.add('marker-mid'); cell.dataset.tip = `Mid=${mid} • A[Mid]=${val}`; }
+
+      const valEl = document.createElement('div');
+      valEl.className = 'val';
+      valEl.setAttribute('contenteditable','true');
+      valEl.setAttribute('spellcheck','false');
+      valEl.textContent = val;
+
+      let oldText = String(val);
+      valEl.addEventListener('focus', ()=>{ oldText = valEl.textContent.trim(); });
+      valEl.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); valEl.blur(); } });
+      valEl.addEventListener('blur', ()=>{
+        const text = valEl.textContent.trim();
+        if(text===oldText) return;
+        const ok = applyEdit(idx, text);
+        if(!ok){ valEl.textContent = oldText; }
+      });
+
+      const idxEl = document.createElement('div');
+      idxEl.className = 'idx';
+      idxEl.textContent = idx;
+
+      cell.appendChild(valEl);
+      cell.appendChild(idxEl);
+      cellsEl.appendChild(cell);
+    });
+
+    requestAnimationFrame(()=>{
+      const cells = [...cellsEl.children];
+      if(cells.length===0 || left>right || left<0){ rangeBoxEl.style.width='0px'; return; }
+      const leftEl = cells[left];
+      const rightEl = cells[right];
+      const l = leftEl.getBoundingClientRect();
+      const r = rightEl.getBoundingClientRect();
+      const b = boardEl.getBoundingClientRect();
+      const start = Math.max(12, (l.left - b.left));
+      const end = Math.min(b.width-12, (r.right - b.left));
+      const w = Math.max(0, end - start);
+      rangeBoxEl.style.left = start + 'px';
+      rangeBoxEl.style.width = w + 'px';
+    });
+  }
+
+  function resetAll(){
+    if(timer){ clearInterval(timer); timer=null; }
+    running = false; steps=0; left=0; right=arr.length-1; mid=-1; targetK=null; clearLog();
+    history = [];
+    renderCells();
+    setStatus();
+    btnStep.disabled = true; btnAuto.disabled = true; btnStart.disabled = false;
+    btnAuto.textContent='Tự động ⏵';
+  }
+
+  function genArray(){
+    const n = clampLen(+lenInput.value || 10);
+    arr = uniqueSortedRandom(n);
+    resetAll();
+    log(`Đã tạo dãy: [${arr.join(', ')}]`);
+  }
+
+  // Manual input modal
+  function manualArrayOpen(){
+    const ex = arr.length ? arr.join(', ') : '10, 17, 23, 31, 42, 55, 60, 71, 83, 97';
+    showModal(ex);
+  }
+  function manualArrayApply(){
+    const err = parseManual(taManual.value);
+    if(err){
+      errBox.textContent = '⚠ ' + err;
+      errBox.style.display = 'block';
+      return;
+    }
+    hideModal();
+  }
+
+  // --- Algorithm helpers ---
+  function validateK(){
+    const v = +kInput.value;
+    if(!Number.isInteger(v) || v<=0 || v>=100){
+      alert('Vui lòng nhập K là số nguyên 1..99 (0 < K < 100).');
+      return null;
+    }
+    return v;
+  }
+
+  // Start
+  function start(){
+    const k = validateK(); if(k===null) return;
+    if(arr.length<6){ alert('Hãy tạo hoặc nhập dãy (ít nhất 6 phần tử).'); return; }
+    targetK = k;
+    left = 0; right = arr.length-1;
+    steps = 0;
+    mid = Math.floor((left + right)/2);
+    setStatus(); clearLog();
+    renderCells(mid,'mid');
+    btnStart.disabled = true; btnStep.disabled = false; btnAuto.disabled = false;
+    history = []; saveHistory();
+    log(`Bắt đầu: K=${targetK}, Left=${left}, Right=${right}, Mid=${mid} (A[Mid]=${arr[mid]})`);
+  }
+
+  function finishNotFound(currStep, L0, R0, M0, V0, reason){
+    renderCells();
+    setStatus();
+    log(`Bước ${currStep}: Left=${L0}, Right=${R0}, Mid=${M0}, A[Mid]=${V0}. ${reason}. ⛔ Không tìm thấy (Left > Right).`);
+    btnStep.disabled = true; btnAuto.disabled = true;
+    if(timer){clearInterval(timer); timer=null;} running=false;
+  }
+
+  function saveHistory(){
+    history.push({left,right,mid,steps,targetK, arr:[...arr]});
+    if(history.length>200) history.shift();
+  }
+  function restoreState(s){
+    left=s.left; right=s.right; mid=s.mid; steps=s.steps; targetK=s.targetK; arr=[...s.arr];
+  }
+
+  function step(){
+    if(targetK===null){ alert('Hãy nhập K và bấm Bắt đầu.'); return; }
+    if(left>right){ return finishNotFound(steps+1, left, right, mid, '-', ''); }
+
+    saveHistory();
+    const currStep = steps + 1;
+    if(mid<0){ mid = Math.floor((left + right)/2); }
+    const L0 = left, R0 = right, M0 = mid, V0 = arr[mid];
+
+    if(V0 === targetK){
+      steps = currStep;
+      renderCells(M0,'hit');
+      setStatus();
+      log(`Bước ${currStep}: Left=${L0}, Right=${R0}, Mid=${M0}, A[Mid]=${V0} == K ⇒ ✅ TÌM THẤY tại chỉ số ${M0}.`);
+      btnStep.disabled = true; btnAuto.disabled = true;
+      if(timer){clearInterval(timer); timer=null;} running=false;
+      return;
+    }
+
+    let reason = '';
+    if(V0 < targetK){
+      renderCells(M0,'miss');
+      left = M0 + 1;
+      reason = `A[Mid]=${V0} < K ⇒ Left = Mid + 1`;
+    }else{
+      renderCells(M0,'miss');
+      right = M0 - 1;
+      reason = `A[Mid]=${V0} > K ⇒ Right = Mid - 1`;
+    }
+
+    if(left>right){
+      steps = currStep;
+      setStatus();
+      return finishNotFound(currStep, L0, R0, M0, V0, reason);
+    }
+
+    mid = Math.floor((left + right)/2);
+    steps = currStep;
+    setStatus();
+    renderCells(mid,'mid');
+    log(`Bước ${currStep}: Left=${L0}, Right=${R0}, Mid=${M0}, A[Mid]=${V0} ⇒ ${reason} ⇒ Left=${left}, Right=${right}, Mid=${mid} (A[Mid]=${arr[mid]})`);
+  }
+
+  function undo(){
+    if(history.length<=1){ return; } // keep initial state
+    history.pop(); // discard current
+    const prev = history[history.length-1];
+    restoreState(prev);
+    setStatus();
+    renderCells(mid,'mid');
+    log('↩️ Quay lại một bước.');
+    btnStep.disabled = false; btnAuto.disabled = false;
+  }
+
+  function autoPlay(){
+    if(targetK===null){ alert('Hãy nhập K và bấm Bắt đầu.'); return; }
+    if(running){
+      running=false; btnAuto.textContent='Tự động ⏵'; if(timer){clearInterval(timer); timer=null;} return;
+    }
+    running=true; btnAuto.textContent='Tạm dừng ⏸';
+    const speed = +speedRange.value;
+    if(timer){ clearInterval(timer); }
+    timer = setInterval(()=>{
+      if(btnStep.disabled){ running=false; btnAuto.textContent='Tự động ⏵'; clearInterval(timer); timer=null; return; }
+      step();
+    }, speed);
+  }
+
+  function hardReset(){
+    if(timer){ clearInterval(timer); timer=null; }
+    running=false; btnAuto.textContent='Tự động ⏵';
+    genArray();
+    kInput.value='';
+    btnStart.disabled=false; btnStep.disabled=true; btnAuto.disabled=true;
+  }
+
+  // --- Event bindings ---
+  btnGen.addEventListener('click', genArray);
+  btnManual.addEventListener('click', manualArrayOpen);
+  btnStart.addEventListener('click', start);
+  btnStep.addEventListener('click', step);
+  btnAuto.addEventListener('click', autoPlay);
+  btnUndo.addEventListener('click', undo);
+  btnReset.addEventListener('click', hardReset);
+  speedRange.addEventListener('input', ()=>{ if(timer){ clearInterval(timer); timer=null; if(running){ autoPlay(); } } });
+
+  // Modal event handlers
+  btnCancel.addEventListener('click', (e)=>{ e.preventDefault(); hideModal(); });
+  btnApply.addEventListener('click', (e)=>{ e.preventDefault(); manualArrayApply(); });
+  backdrop.addEventListener('click', (e)=>{ if(e.target===backdrop) hideModal(); });
+  modalCard.addEventListener('click', (e)=>{ e.stopPropagation(); }); // prevent backdrop close on inner clicks
+
+  // init
+  arr = uniqueSortedRandom(10);
+  resetAll();
+  log(`Đã tạo dãy: [${arr.join(', ')}]`);
+})();
+</script>
+</body>
+</html>
